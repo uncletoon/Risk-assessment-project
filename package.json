@@ -1,0 +1,33 @@
+{
+  "name": "enterprise-risk-intelligence",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:backend dev:frontend",
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "eslint backend frontend --max-warnings=50",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "db:generate": "npm --workspace backend run prisma:generate",
+    "db:migrate": "npm --workspace backend run prisma:migrate",
+    "db:seed": "npm --workspace backend run db:seed"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.38.0",
+    "eslint": "9.38.0",
+    "npm-run-all": "4.1.5",
+    "prettier": "3.6.2",
+    "typescript-eslint": "8.46.2"
+  },
+  "dependencies": {
+    "effect": "^3.22.1"
+  }
+}

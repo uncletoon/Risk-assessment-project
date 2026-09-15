@@ -1,0 +1,61 @@
+Client ID,Client Name,,Investment Product,Branch Office,Principal Amount (RWF),Annual Interest Rate (%),Tenure (Months),Investment Date,Maturity Date,Total Expected Interest (RWF),Monthly Interest Payout (RWF),Total Maturity Value (RWF),Investment Status
+MFI-RW-2001,Faustin Appiah,,Youth Innovators Micro-Bond,Gasabo Business Hub,5000000,8.8,6,13/01/2026,14/07/2026,220000,36666.67,5220000,Active
+MFI-RW-2002,Tariq Ndlovu,,6-Month Term Micro-Deposit,Gasabo Business Hub,1000000,8.5,6,23/04/2026,22/10/2026,42500,7083.33,1042500,Active
+MFI-RW-2003,Samuel Tesfaye,,Agri-Yield 180-Day Certificate,Rubavu Lakeside Branch,750000,9,6,01/05/2026,30/10/2026,33750,5625,783750,Matured
+MFI-RW-2004,Leila Toure,,Women Enterprise Growth Fund,Rubavu Lakeside Branch,250000,9.5,6,19/03/2026,17/09/2026,11875,1979.17,261875,Active
+MFI-RW-2005,Faith Keita,,6-Month Term Micro-Deposit,Rubavu Lakeside Branch,2000000,8.5,6,19/04/2026,18/10/2026,85000,14166.67,2085000,Reinvested
+MFI-RW-2006,Paul Kagame,,Agri-Yield 180-Day Certificate,Kicukiro Agakiriro Agency,150000,9,6,25/01/2026,26/07/2026,6750,1125,156750,Reinvested
+MFI-RW-2007,Salma Kagame,,Community Solidarity Saver,Kicukiro Agakiriro Agency,500000,7.5,6,09/01/2026,10/07/2026,18750,3125,518750,Active
+MFI-RW-2008,Blessing Habimana,,Community Solidarity Saver,Kicukiro Agakiriro Agency,5000000,7.5,6,12/02/2026,13/08/2026,187500,31250,5187500,Active
+MFI-RW-2009,Eric Kagame,,Agri-Yield 180-Day Certificate,Rubavu Lakeside Branch,5000000,9,6,28/05/2026,26/11/2026,225000,37500,5225000,Matured
+MFI-RW-2010,Zainab Hakizimana,,Women Enterprise Growth Fund,Rubavu Lakeside Branch,750000,9.5,6,25/06/2026,24/12/2026,35625,5937.5,785625,Active
+MFI-RW-2011,Victor Kamau,,Community Solidarity Saver,Kigali Nyarugenge Branch,250000,7.5,6,28/03/2026,26/09/2026,9375,1562.5,259375,Active
+MFI-RW-2012,Innocent Kone,,Youth Innovators Micro-Bond,Kigali Nyarugenge Branch,1500000,8.8,6,13/03/2026,11/09/2026,66000,11000,1566000,Active
+MFI-RW-2013,Blessing Mukherjee,,SME Horizon 6-Month Note,Gasabo Business Hub,1500000,10,6,29/01/2026,30/07/2026,75000,12500,1575000,Active
+MFI-RW-2014,Halima Moyo,,Community Solidarity Saver,Huye Southern Center,10000000,7.5,6,06/06/2026,05/12/2026,375000,62500,10375000,Active
+MFI-RW-2015,Faith Balogun,,SME Horizon 6-Month Note,Kicukiro Agakiriro Agency,5000000,10,6,22/05/2026,20/11/2026,250000,41666.67,5250000,Active
+MFI-RW-2016,Kwame Kamau,,Community Solidarity Saver,Kigali Nyarugenge Branch,10000000,7.5,6,14/04/2026,13/10/2026,375000,62500,10375000,Reinvested
+MFI-RW-2017,Tariq Uwase,,6-Month Term Micro-Deposit,Kicukiro Agakiriro Agency,500000,8.5,6,20/06/2026,19/12/2026,21250,3541.67,521250,Active
+MFI-RW-2018,Salma Mensah,,Youth Innovators Micro-Bond,Huye Southern Center,10000000,8.8,6,12/05/2026,10/11/2026,440000,73333.33,10440000,Active
+MFI-RW-2019,Emmanuel Nkosi,,Youth Innovators Micro-Bond,Rubavu Lakeside Branch,1000000,8.8,6,18/03/2026,16/09/2026,44000,7333.33,1044000,Active
+MFI-RW-2020,Aisha Diop,,Women Enterprise Growth Fund,Huye Southern Center,150000,9.5,6,11/01/2026,12/07/2026,7125,1187.5,157125,Active
+MFI-RW-2021,Victor Tesfaye,,Youth Innovators Micro-Bond,Kigali Nyarugenge Branch,750000,8.8,6,22/05/2026,20/11/2026,33000,5500,783000,Matured
+MFI-RW-2022,Placide Nshimiyimana,,Agri-Yield 180-Day Certificate,Gasabo Business Hub,7500000,9,6,20/06/2026,19/12/2026,337500,56250,7837500,Matured
+MFI-RW-2023,Jean-Pierre Okafor,,6-Month Term Micro-Deposit,Musanze Northern Hub,7500000,8.5,6,26/06/2026,25/12/2026,318750,53125,7818750,Active
+MFI-RW-2024,Eric Mwangi,,Agri-Yield 180-Day Certificate,Gasabo Business Hub,150000,9,6,28/01/2026,29/07/2026,6750,1125,156750,Active
+MFI-RW-2025,Nia Bizimana,,Women Enterprise Growth Fund,Rubavu Lakeside Branch,500000,9.5,6,16/06/2026,15/12/2026,23750,3958.33,523750,Active
+MFI-RW-2026,Kofi Tesfaye,,Youth Innovators Micro-Bond,Huye Southern Center,10000000,8.8,6,13/05/2026,11/11/2026,440000,73333.33,10440000,Active
+MFI-RW-2027,Chidi Ndayisaba,,Women Enterprise Growth Fund,Rubavu Lakeside Branch,7500000,9.5,6,11/05/2026,09/11/2026,356250,59375,7856250,Matured
+MFI-RW-2028,Emmanuel Adeyemi,,SME Horizon 6-Month Note,Huye Southern Center,15000000,10,6,06/06/2026,05/12/2026,750000,125000,15750000,Active
+MFI-RW-2029,Samuel Keita,,Agri-Yield 180-Day Certificate,Huye Southern Center,10000000,9,6,30/01/2026,31/07/2026,450000,75000,10450000,Active
+MFI-RW-2030,Chidi Hassan,,Youth Innovators Micro-Bond,Musanze Northern Hub,5000000,8.8,6,10/04/2026,09/10/2026,220000,36666.67,5220000,Active
+MFI-RW-2031,Faith Okafor,,Community Solidarity Saver,Gasabo Business Hub,750000,7.5,6,03/03/2026,01/09/2026,28125,4687.5,778125,Matured
+MFI-RW-2032,Blessing Kayitesi,,Women Enterprise Growth Fund,Kigali Nyarugenge Branch,1000000,9.5,6,05/05/2026,03/11/2026,47500,7916.67,1047500,Active
+MFI-RW-2033,Faith Okafor,,6-Month Term Micro-Deposit,Gasabo Business Hub,2000000,8.5,6,09/03/2026,07/09/2026,85000,14166.67,2085000,Active
+MFI-RW-2034,Faustin Hakizimana,,Community Solidarity Saver,Kicukiro Agakiriro Agency,10000000,7.5,6,15/01/2026,16/07/2026,375000,62500,10375000,Active
+MFI-RW-2035,Mariam Mensah,,6-Month Term Micro-Deposit,Kigali Nyarugenge Branch,1500000,8.5,6,09/04/2026,08/10/2026,63750,10625,1563750,Active
+MFI-RW-2036,Amina Mthembu,,Youth Innovators Micro-Bond,Musanze Northern Hub,500000,8.8,6,27/01/2026,28/07/2026,22000,3666.67,522000,Reinvested
+MFI-RW-2037,Victor Keita,,Women Enterprise Growth Fund,Huye Southern Center,500000,9.5,6,12/04/2026,11/10/2026,23750,3958.33,523750,Reinvested
+MFI-RW-2038,Theogene Hassan,,6-Month Term Micro-Deposit,Kigali Nyarugenge Branch,5000000,8.5,6,12/01/2026,13/07/2026,212500,35416.67,5212500,Reinvested
+MFI-RW-2039,Amina Uwamahoro,,Agri-Yield 180-Day Certificate,Kicukiro Agakiriro Agency,500000,9,6,09/06/2026,08/12/2026,22500,3750,522500,Matured
+MFI-RW-2040,Aisha Kamau,,SME Horizon 6-Month Note,Kigali Nyarugenge Branch,3000000,10,6,26/01/2026,27/07/2026,150000,25000,3150000,Active
+MFI-RW-2041,Jean-Pierre Nkosi,,6-Month Term Micro-Deposit,Gasabo Business Hub,5000000,8.5,6,12/02/2026,13/08/2026,212500,35416.67,5212500,Reinvested
+MFI-RW-2042,Diane Twagirayezu,,6-Month Term Micro-Deposit,Rubavu Lakeside Branch,1500000,8.5,6,27/06/2026,26/12/2026,63750,10625,1563750,Active
+MFI-RW-2043,Chidi Kagame,,Women Enterprise Growth Fund,Rubavu Lakeside Branch,5000000,9.5,6,16/05/2026,14/11/2026,237500,39583.33,5237500,Active
+MFI-RW-2044,Eric Uwera,,Women Enterprise Growth Fund,Huye Southern Center,150000,9.5,6,19/02/2026,20/08/2026,7125,1187.5,157125,Active
+MFI-RW-2045,Claudine Adeyemi,,Agri-Yield 180-Day Certificate,Gasabo Business Hub,500000,9,6,08/05/2026,06/11/2026,22500,3750,522500,Active
+MFI-RW-2046,David Uwamahoro,,Agri-Yield 180-Day Certificate,Huye Southern Center,250000,9,6,13/02/2026,14/08/2026,11250,1875,261250,Active
+MFI-RW-2047,Mariam Kagame,,Agri-Yield 180-Day Certificate,Rubavu Lakeside Branch,750000,9,6,09/02/2026,10/08/2026,33750,5625,783750,Active
+MFI-RW-2048,Paul Balogun,,SME Horizon 6-Month Note,Kicukiro Agakiriro Agency,1500000,10,6,07/02/2026,08/08/2026,75000,12500,1575000,Reinvested
+MFI-RW-2049,Daniel Otieno,,Agri-Yield 180-Day Certificate,Musanze Northern Hub,5000000,9,6,17/03/2026,15/09/2026,225000,37500,5225000,Active
+MFI-RW-2050,Blessing Kagame,,Women Enterprise Growth Fund,Gasabo Business Hub,1000000,9.5,6,22/04/2026,21/10/2026,47500,7916.67,1047500,Matured
+MFI-RW-2051,Theogene Uwera,,Community Solidarity Saver,Musanze Northern Hub,10000000,7.5,6,21/01/2026,22/07/2026,375000,62500,10375000,Active
+MFI-RW-2052,Beatrice Moyo,,Youth Innovators Micro-Bond,Kigali Nyarugenge Branch,2000000,8.8,6,02/06/2026,01/12/2026,88000,14666.67,2088000,Reinvested
+MFI-RW-2053,Placide Kone,,SME Horizon 6-Month Note,Kicukiro Agakiriro Agency,10000000,10,6,22/02/2026,23/08/2026,500000,83333.33,10500000,Active
+MFI-RW-2054,Mariam Nshimiyimana,,Youth Innovators Micro-Bond,Huye Southern Center,15000000,8.8,6,21/02/2026,22/08/2026,660000,110000,15660000,Matured
+MFI-RW-2055,Blessing Gakwaya,,Community Solidarity Saver,Rubavu Lakeside Branch,10000000,7.5,6,07/05/2026,05/11/2026,375000,62500,10375000,Active
+MFI-RW-2056,Beatrice Tesfaye,,Community Solidarity Saver,Rubavu Lakeside Branch,1500000,7.5,6,21/06/2026,20/12/2026,56250,9375,1556250,Active
+MFI-RW-2057,Patrick Uwamahoro,,SME Horizon 6-Month Note,Kigali Nyarugenge Branch,1500000,10,6,30/03/2026,28/09/2026,75000,12500,1575000,Active
+MFI-RW-2058,Samuel Nkosi,,Women Enterprise Growth Fund,Huye Southern Center,500000,9.5,6,12/03/2026,10/09/2026,23750,3958.33,523750,Active
+MFI-RW-2059,Emmanuel Uwase,,6-Month Term Micro-Deposit,Gasabo Business Hub,15000000,8.5,6,29/05/2026,27/11/2026,637500,106250,15637500,Active
+MFI-RW-2060,Placide Mensah,,Agri-Yield 180-Day Certificate,Kicukiro Agakiriro Agency,7500000,9,6,21/06/2026,20/12/2026,337500,56250,7837500,Active
