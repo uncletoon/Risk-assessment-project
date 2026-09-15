@@ -23,7 +23,6 @@ import RiskCategories from "./pages/admin/RiskCategories";
 import RiskRules from "./pages/admin/RiskRules";
 import AuditLogs from "./pages/admin/AuditLogs";
 import SystemHealth from "./pages/admin/SystemHealth";
-import MethodologyConfig from "./pages/admin/MethodologyConfig";
 
 function ProtectedLayout({
   children,
@@ -185,11 +184,7 @@ function AppRoutes() {
 
       <Route
         path="/admin/methodology"
-        element={
-          <ProtectedLayout title="Risk Methodology & Scoring Engine Configurator">
-            <MethodologyConfig />
-          </ProtectedLayout>
-        }
+        element={<Navigate to="/admin/categories" replace />}
       />
 
       <Route

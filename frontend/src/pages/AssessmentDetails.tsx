@@ -24,13 +24,11 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  Sliders,
   Scale,
   ListTodo,
   User,
   Calculator,
 } from "lucide-react";
-import { MitigationSimulatorModal } from "../components/ui/MitigationSimulatorModal";
 import {
   ResponsiveContainer,
   RadarChart,
@@ -54,12 +52,6 @@ export default function AssessmentDetails() {
 
   // Traceable Evidence Drawer
   const [expandedRiskId, setExpandedRiskId] = useState<number | null>(null);
-
-  // What-If Simulator State
-  const [simulatorOpen, setSimulatorOpen] = useState(false);
-  const [simulatorRisk, setSimulatorRisk] = useState<IdentifiedRisk | null>(
-    null,
-  );
 
   // Convert Recommendation to Mitigation Modal
   const [modalRec, setModalRec] = useState<AIRecommendation | null>(null);
@@ -872,18 +864,6 @@ export default function AssessmentDetails() {
                           Residual Score
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSimulatorRisk(risk);
-                          setSimulatorOpen(true);
-                        }}
-                        className="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-bold border border-indigo-200 flex items-center gap-1 transition"
-                      >
-                        <Sliders className="w-3.5 h-3.5" />
-                        Simulate
-                      </button>
                       <button className="p-1 rounded-lg hover:bg-surface-container text-primary">
                         {isExpanded ? (
                           <ChevronUp className="w-5 h-5" />
@@ -1377,13 +1357,6 @@ export default function AssessmentDetails() {
           </div>
         </div>
       )}
-
-      {/* What-If Mitigation Impact Simulator Modal */}
-      <MitigationSimulatorModal
-        isOpen={simulatorOpen}
-        onClose={() => setSimulatorOpen(false)}
-        initialRisk={simulatorRisk}
-      />
     </div>
   );
 }

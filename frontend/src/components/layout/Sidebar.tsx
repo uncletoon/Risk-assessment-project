@@ -353,21 +353,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </NavLink>
 
               <NavLink
-                to="/admin/methodology"
-                onClick={handleNavClick}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                    isActive
-                      ? "text-secondary-container bg-surface-container-highest/25 font-bold shadow-xs"
-                      : "text-on-primary-container hover:text-surface-container-lowest hover:bg-surface-container-highest/15"
-                  }`
-                }
-              >
-                <Sliders className="w-4 h-4" />
-                <span>Methodology Configurator</span>
-              </NavLink>
-
-              <NavLink
                 to="/admin/rules"
                 onClick={handleNavClick}
                 className={({ isActive }) =>

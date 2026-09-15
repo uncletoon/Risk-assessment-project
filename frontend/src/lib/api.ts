@@ -153,7 +153,7 @@ export interface AssessmentDetailsResponse {
 }
 
 function getAuthHeader(): HeadersInit {
-  const token = localStorage.getItem('eridss_token');
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('eridss_token') : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -638,21 +638,10 @@ export const api = {
     });
     return handleResponse<{ message: string; methodology: MethodologyConfig }>(res);
   },
-
-  simulateRiskMitigation: async (data: {
-    risk_id?: number;
-    inherent_risk?: number;
-    current_residual?: number;
-    proposed_controls: Array<{ control_name: string; effectiveness_pct: number }>;
-  }) => {
-    const res = await fetch('/api/risks/simulate', {
-      method: 'POST',
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return handleResponse<{ success: boolean; riskId: number | null; simulation: SimulationResult }>(res);
-  },
 };
+
+export const getMethodology = api.getMethodology;
+export const updateMethodology = api.updateMethodology;
 
 export interface MethodologyConfig {
   matrix_dimension: number;
@@ -661,15 +650,4 @@ export interface MethodologyConfig {
   score_bands: Array<{ name: string; min_score: number; max_score: number; color: string }>;
   category_weights: Record<string, number>;
   is_custom?: boolean;
-}
-
-export interface SimulationResult {
-  inherentRisk: number;
-  currentResidual: number;
-  projectedResidual: number;
-  projectedClassification: string;
-  deltaPoints: number;
-  reductionPercentage: number;
-  effectiveControlPct: number;
-  explanation: string;
 }
