@@ -78,9 +78,12 @@ async function extractDocumentFactsAndRisks(
       };
     } catch (err) {
       lastError = err;
+      const causeInfo = err.cause
+        ? ` (${err.cause.code || err.cause.message || err.cause})`
+        : "";
       console.warn(
         `Gemini extraction attempt ${attempts} failed:`,
-        err.message,
+        err.message + causeInfo,
       );
       if (attempts < maxAttempts) {
         await new Promise((r) => setTimeout(r, 1000));

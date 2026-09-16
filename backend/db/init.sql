@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS extracted_facts CASCADE;
 DROP TABLE IF EXISTS documents CASCADE;
 DROP TABLE IF EXISTS assessments CASCADE;
 DROP TABLE IF EXISTS risk_rules CASCADE;
+DROP TABLE IF EXISTS rule_groups CASCADE;
 DROP TABLE IF EXISTS risk_categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS organizations CASCADE;
@@ -26,8 +27,14 @@ CREATE TABLE organizations (
   id SERIAL PRIMARY KEY,
   name VARCHAR(200) NOT NULL,
   industry VARCHAR(100) NOT NULL DEFAULT 'Financial & Enterprise Services',
+  business_type VARCHAR(100),
+  district VARCHAR(100),
+  sector VARCHAR(100),
+  street_number VARCHAR(100),
+  product_types TEXT,
   description TEXT,
   contact_email VARCHAR(150),
+  methodology_config JSONB DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -39,6 +46,8 @@ CREATE TABLE users (
   full_name VARCHAR(150) NOT NULL,
   email VARCHAR(150) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
+  phone_number VARCHAR(50),
+  gender VARCHAR(20),
   role VARCHAR(50) NOT NULL CHECK (role IN ('SYSTEM_ADMIN', 'RISK_OFFICER')),
   department VARCHAR(100) DEFAULT 'Risk Management',
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
@@ -58,9 +67,20 @@ CREATE TABLE risk_categories (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Risk Rules (Configurable rules for deterministic scoring)
+-- 4. Rule Groups (Categorized rule engines e.g. Credit, Microfinance, Commercial)
+CREATE TABLE rule_groups (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(150) NOT NULL UNIQUE,
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. Risk Rules (Configurable rules for deterministic scoring)
 CREATE TABLE risk_rules (
   id SERIAL PRIMARY KEY,
+  rule_group_id INTEGER REFERENCES rule_groups(id) ON DELETE SET NULL,
   category_code VARCHAR(50) NOT NULL REFERENCES risk_categories(code) ON DELETE CASCADE,
   factor_name VARCHAR(150) NOT NULL,
   condition_operator VARCHAR(20) NOT NULL CHECK (condition_operator IN ('GT', 'LT', 'GTE', 'LTE', 'EQ', 'CONTAINS', 'RANGE')),
@@ -73,11 +93,12 @@ CREATE TABLE risk_rules (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Assessments (Core assessment session tracking)
+-- 6. Assessments (Core assessment session tracking)
 CREATE TABLE assessments (
   id SERIAL PRIMARY KEY,
   organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   created_by_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  rule_group_id INTEGER REFERENCES rule_groups(id) ON DELETE SET NULL,
   title VARCHAR(255) NOT NULL,
   target_type VARCHAR(50) DEFAULT 'ENTERPRISE' CHECK (target_type IN ('ENTERPRISE', 'SINGLE_USER')),
   client_name VARCHAR(150),
@@ -92,6 +113,8 @@ CREATE TABLE assessments (
   overall_eri DECIMAL(5, 2),
   eri_classification VARCHAR(50), -- Very Low, Low, Moderate, High, Critical
   document_summary TEXT,
+  methodology_snapshot JSONB DEFAULT NULL,
+  eri_explanation TEXT DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   completed_at TIMESTAMP WITH TIME ZONE
 );
@@ -265,15 +288,20 @@ CREATE INDEX idx_audit_logs_created ON audit_logs(created_at);
 
 -- 1. Organizations
 INSERT INTO organizations (id, name, industry, business_type, district, sector, street_number, product_types, description, contact_email)
+VALUES
   (1, 'Apex Horizon Global Enterprises', 'Financial & Enterprise Services', 'Microfinance & Digital Lending', 'Nyarugenge', 'Nyarugenge', 'KN 4 Ave, Plot 12', 'Digital Micro-Loans, SME Working Capital, Savings & Group Guarantees', 'Multinational conglomerate operating in digital financial infrastructure, logistics, and cloud platforms.', 'compliance@apexhorizon.com')
 ON CONFLICT (id) DO NOTHING;
+
 -- 2. Users (Password is 'Admin@123' and 'Officer@123' hashed with bcrypt)
 INSERT INTO users (id, organization_id, full_name, email, password, phone_number, gender, role, department)
 VALUES
-  (1, 1, 'Dr. Marcus Vance (Admin)', 'admin@eridss.com', '$2b$10$NcUp88zXaaTQaYO4IY2py.vIO6q8/eRkGr11wNrxmRG6vv7e8hxCa', '+250 788 123 456', 'Male', 'SYSTEM_ADMIN', 'Enterprise Risk Governance'),
+  (1, 1, 'Dr. Marcus Vance (Admin)', 'admin@eridss.com', '$2b$10$pG6vIdF2IrXN6ZtoJbcWw.zoRmhTAGoyuFmnfQkK5BOltZQgdhKc.', '+250 788 123 456', 'Male', 'SYSTEM_ADMIN', 'Enterprise Risk Governance'),
+  (2, 1, 'Sarah Jenkins (Risk Officer)', 'officer@eridss.com', '$2b$10$0zYKjoCgvHfBJyA.UXsqYOqBZNLJVlbnf8IFsotZxIKhqiV8OV1Mq', '+250 788 654 321', 'Female', 'RISK_OFFICER', 'Enterprise Risk Governance')
 ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password;
 
 -- 3. Risk Categories (6 standard enterprise categories with default weights summing to 100%)
+INSERT INTO risk_categories (code, name, default_weight, description)
+VALUES
   ('FINANCIAL', 'Financial Risk', 20.00, 'Exposure to capital inadequacy, liquidity stress, debt overhang, revenue contraction, and credit volatility.'),
   ('OPERATIONAL', 'Operational Risk', 20.00, 'Vulnerabilities in internal processes, key-person dependency, supplier concentration, and business continuity failure.'),
   ('STRATEGIC', 'Strategic Risk', 15.00, 'Misalignment of business model, aggressive market expansion without buffer, M&A integration failure, or competitive disruption.'),
@@ -285,23 +313,32 @@ ON CONFLICT (code) DO UPDATE SET
   default_weight = EXCLUDED.default_weight,
   description = EXCLUDED.description;
 
--- 4. Default Deterministic Risk Rules
-INSERT INTO risk_rules (category_code, factor_name, condition_operator, threshold_value, likelihood_score, impact_score, severity, description)
+-- 4. Default Rule Groups
+INSERT INTO rule_groups (id, name, description, is_active)
+VALUES 
+  (1, 'Standard Individual Credit Rules', 'General risk rules engine for personal loans, salary-backed credit, and individual financial health.', true),
+  (2, 'Microfinance & Small Enterprise Rules', 'Specialized rules engine evaluating micro-credit turnover, working capital ratios, and loan guarantee coverages.', true),
+  (3, 'High-Net-Worth & Commercial Lending Rules', 'Deep liquidity, leverage ratios, and asset-backed debt capacity assessment rules.', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 5. Default Deterministic Risk Rules
+INSERT INTO risk_rules (rule_group_id, category_code, factor_name, condition_operator, threshold_value, likelihood_score, impact_score, severity, description)
 VALUES
-  ('FINANCIAL', 'Debt-to-Equity Ratio', 'GT', '2.5', 4, 4, 'High', 'High leverage increases financial distress likelihood during cash flow contractions.'),
-  ('FINANCIAL', 'Operating Cash Flow Deficit', 'LT', '0', 4, 5, 'Critical', 'Negative operating cash flow directly threatens ongoing working capital and debt service obligations.'),
-  ('FINANCIAL', 'Short-term Liquidity Ratio', 'LT', '1.0', 4, 4, 'High', 'Current ratio below 1.0 indicates working capital deficit within 12 months.'),
-  ('OPERATIONAL', 'Supplier Concentration', 'GT', '70%', 4, 5, 'Critical', 'Single vendor supplying over 70% of vital components creates severe single-point of failure.'),
-  ('OPERATIONAL', 'Disaster Recovery RTO', 'GT', '48 hours', 3, 4, 'High', 'Long recovery time objectives expose business to extended downtime and operational paralysis.'),
-  ('STRATEGIC', 'Core Market Revenue Dependency', 'GT', '80%', 4, 4, 'High', 'Over 80% revenue concentrated in a single fluctuating sector without diversification.'),
-  ('TECHNOLOGICAL', 'Privileged Account MFA Absence', 'EQ', 'true', 5, 5, 'Critical', 'Absence of Multi-Factor Authentication on admin accounts dramatically increases compromise probability.'),
-  ('TECHNOLOGICAL', 'Unpatched Critical CVE Vulnerabilities', 'GT', '0', 4, 4, 'High', 'Known unpatched vulnerabilities in internet-facing infrastructure.'),
-  ('LEGAL_REGULATORY', 'Statutory Compliance Deficiencies', 'CONTAINS', 'non-compliant', 4, 4, 'High', 'Documented regulatory infractions risking license revocation or material punitive fines.'),
-  ('MARKET', 'Top 3 Customer Concentration', 'GT', '60%', 4, 4, 'High', 'Top 3 clients account for over 60% of gross revenue, elevating customer churn impact.')
+  (1, 'FINANCIAL', 'Debt-to-Equity Ratio', 'GT', '2.5', 4, 4, 'High', 'High leverage increases financial distress likelihood during cash flow contractions.'),
+  (1, 'FINANCIAL', 'Operating Cash Flow Deficit', 'LT', '0', 4, 5, 'Critical', 'Negative operating cash flow directly threatens ongoing working capital and debt service obligations.'),
+  (1, 'FINANCIAL', 'Short-term Liquidity Ratio', 'LT', '1.0', 4, 4, 'High', 'Current ratio below 1.0 indicates working capital deficit within 12 months.'),
+  (1, 'OPERATIONAL', 'Supplier Concentration', 'GT', '70%', 4, 5, 'Critical', 'Single vendor supplying over 70% of vital components creates severe single-point of failure.'),
+  (1, 'OPERATIONAL', 'Disaster Recovery RTO', 'GT', '48 hours', 3, 4, 'High', 'Long recovery time objectives expose business to extended downtime and operational paralysis.'),
+  (1, 'STRATEGIC', 'Core Market Revenue Dependency', 'GT', '80%', 4, 4, 'High', 'Over 80% revenue concentrated in a single fluctuating sector without diversification.'),
+  (1, 'TECHNOLOGICAL', 'Privileged Account MFA Absence', 'EQ', 'true', 5, 5, 'Critical', 'Absence of Multi-Factor Authentication on admin accounts dramatically increases compromise probability.'),
+  (1, 'TECHNOLOGICAL', 'Unpatched Critical CVE Vulnerabilities', 'GT', '0', 4, 4, 'High', 'Known unpatched vulnerabilities in internet-facing infrastructure.'),
+  (1, 'LEGAL_REGULATORY', 'Statutory Compliance Deficiencies', 'CONTAINS', 'non-compliant', 4, 4, 'High', 'Documented regulatory infractions risking license revocation or material punitive fines.'),
+  (1, 'MARKET', 'Top 3 Customer Concentration', 'GT', '60%', 4, 4, 'High', 'Top 3 clients account for over 60% of gross revenue, elevating customer churn impact.')
 ON CONFLICT DO NOTHING;
 
 -- Reset sequences
 SELECT setval(pg_get_serial_sequence('organizations', 'id'), COALESCE((SELECT MAX(id) FROM organizations), 1));
 SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1));
+SELECT setval(pg_get_serial_sequence('rule_groups', 'id'), COALESCE((SELECT MAX(id) FROM rule_groups), 1));
 SELECT setval(pg_get_serial_sequence('risk_categories', 'id'), COALESCE((SELECT MAX(id) FROM risk_categories), 1));
 SELECT setval(pg_get_serial_sequence('risk_rules', 'id'), COALESCE((SELECT MAX(id) FROM risk_rules), 1));
