@@ -134,26 +134,27 @@ async function generatePostCalculationIntelligence(assessmentContext) {
     console.error("Gemini Intelligence Analysis error:", err.message);
     // Provide deterministic fallback structure so assessment never fails completely
     return {
-      executive_summary: `The enterprise assessment yielded an overall Enterprise Risk Index (ERI) of ${assessmentContext.eriResult?.eriScore} (${assessmentContext.eriResult?.classification}). Active mitigation is recommended for elevated category exposures.`,
+      executive_summary: `The single client credit assessment yielded a normalized Client Risk Index of ${assessmentContext.eriResult?.eriScore} (${assessmentContext.eriResult?.classification}). Further review is recommended for elevated repayment, debt, income, collateral, or data quality risks.`,
       risk_position_overview:
-        "Risk evaluation generated via deterministic calculations.",
+        "Client credit risk evaluation generated via deterministic calculations from the extracted borrower evidence.",
       top_risk_drivers:
         assessmentContext.calculatedRisks?.slice(0, 3).map((r) => ({
           driver_title: r.risk_name,
           category: r.category_code,
-          impact_summary: `High residual risk of ${r.residual_risk}`,
+          impact_summary: `High residual client risk of ${r.residual_risk}`,
           supporting_evidence: r.evidence_quote || "",
         })) || [],
       strategic_implications:
-        "Review identified high and critical risks to implement targeted controls.",
+        "Review high and critical client risks and resolve the identified repayment, evidence, or collateral gaps before making a final credit decision.",
       recommendations:
         assessmentContext.calculatedRisks?.slice(0, 4).map((r, idx) => ({
           title: `Mitigate ${r.risk_name}`,
           risk_name: r.risk_name,
-          recommendation_text: `Implement enhanced controls and continuous monitoring for ${r.risk_name}.`,
+          recommendation_text: `Obtain the missing evidence and implement targeted repayment risk mitigation for ${r.risk_name}.`,
           priority: idx === 0 ? "IMMEDIATE" : "SHORT_TERM",
           suggested_timeframe: idx === 0 ? "30 days" : "60 days",
-          expected_outcome: "Reduce category residual risk.",
+          expected_outcome:
+            "Reduce the identified client residual risk or resolve the manual review condition.",
         })) || [],
     };
   }

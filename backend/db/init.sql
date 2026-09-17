@@ -319,15 +319,15 @@ VALUES
   (2, 1, 'Sarah Jenkins (Risk Officer)', 'officer@eridss.com', '$2b$10$0zYKjoCgvHfBJyA.UXsqYOqBZNLJVlbnf8IFsotZxIKhqiV8OV1Mq', '+250 788 654 321', 'Female', 'RISK_OFFICER', 'Enterprise Risk Governance')
 ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password;
 
--- 3. Risk Categories (6 standard enterprise categories with default weights summing to 100%)
+-- 3. Single Client Credit Risk Categories (weights sum to 100%)
 INSERT INTO risk_categories (code, name, default_weight, description)
 VALUES
-  ('FINANCIAL', 'Financial Risk', 20.00, 'Exposure to capital inadequacy, liquidity stress, debt overhang, revenue contraction, and credit volatility.'),
-  ('OPERATIONAL', 'Operational Risk', 20.00, 'Vulnerabilities in internal processes, key-person dependency, supplier concentration, and business continuity failure.'),
-  ('STRATEGIC', 'Strategic Risk', 15.00, 'Misalignment of business model, aggressive market expansion without buffer, M&A integration failure, or competitive disruption.'),
-  ('TECHNOLOGICAL', 'Technological & Cyber Risk', 15.00, 'Legacy system vulnerability, insufficient cybersecurity controls, lack of MFA, data breach risks, and unmanaged IT dependencies.'),
-  ('LEGAL_REGULATORY', 'Legal & Regulatory Risk', 10.00, 'Non-compliance with statutory standards, pending litigation, licensing vulnerability, data privacy fines (GDPR/statutory).'),
-  ('MARKET', 'Market & Macro Risk', 20.00, 'Customer concentration, commodity/foreign exchange exposure, interest rate volatility, and macro-economic downturns.')
+  ('REPAYMENT_CAPACITY', 'Repayment Capacity & Affordability', 30.00, 'Ability to meet the proposed repayment from verified disposable income and recurring cash flow.'),
+  ('DEBT_BURDEN', 'Existing Debt & Leverage', 20.00, 'Existing obligations, leverage, debt service burden, and available borrowing headroom.'),
+  ('INCOME_STABILITY', 'Income & Cash Flow Stability', 15.00, 'Consistency, source quality, volatility, and sustainability of income or business cash flow.'),
+  ('CREDIT_BEHAVIOR', 'Credit & Repayment Behavior', 15.00, 'Previous repayment conduct, arrears, missed payments, account behavior, and credit history.'),
+  ('COLLATERAL_GUARANTEE', 'Collateral & Guarantee Coverage', 10.00, 'Quality, ownership, enforceability, valuation, and coverage provided by collateral or guarantees.'),
+  ('KYC_DATA_QUALITY', 'KYC, Fraud & Data Quality', 10.00, 'Identity consistency, document reliability, missing information, contradictions, and fraud indicators.')
 ON CONFLICT (code) DO UPDATE SET 
   name = EXCLUDED.name,
   default_weight = EXCLUDED.default_weight,
@@ -344,16 +344,14 @@ ON CONFLICT (id) DO NOTHING;
 -- 5. Default Deterministic Risk Rules
 INSERT INTO risk_rules (rule_group_id, category_code, factor_name, condition_operator, threshold_value, likelihood_score, impact_score, severity, description)
 VALUES
-  (1, 'FINANCIAL', 'Debt-to-Equity Ratio', 'GT', '2.5', 4, 4, 'High', 'High leverage increases financial distress likelihood during cash flow contractions.'),
-  (1, 'FINANCIAL', 'Operating Cash Flow Deficit', 'LT', '0', 4, 5, 'Critical', 'Negative operating cash flow directly threatens ongoing working capital and debt service obligations.'),
-  (1, 'FINANCIAL', 'Short-term Liquidity Ratio', 'LT', '1.0', 4, 4, 'High', 'Current ratio below 1.0 indicates working capital deficit within 12 months.'),
-  (1, 'OPERATIONAL', 'Supplier Concentration', 'GT', '70%', 4, 5, 'Critical', 'Single vendor supplying over 70% of vital components creates severe single-point of failure.'),
-  (1, 'OPERATIONAL', 'Disaster Recovery RTO', 'GT', '48 hours', 3, 4, 'High', 'Long recovery time objectives expose business to extended downtime and operational paralysis.'),
-  (1, 'STRATEGIC', 'Core Market Revenue Dependency', 'GT', '80%', 4, 4, 'High', 'Over 80% revenue concentrated in a single fluctuating sector without diversification.'),
-  (1, 'TECHNOLOGICAL', 'Privileged Account MFA Absence', 'EQ', 'true', 5, 5, 'Critical', 'Absence of Multi-Factor Authentication on admin accounts dramatically increases compromise probability.'),
-  (1, 'TECHNOLOGICAL', 'Unpatched Critical CVE Vulnerabilities', 'GT', '0', 4, 4, 'High', 'Known unpatched vulnerabilities in internet-facing infrastructure.'),
-  (1, 'LEGAL_REGULATORY', 'Statutory Compliance Deficiencies', 'CONTAINS', 'non-compliant', 4, 4, 'High', 'Documented regulatory infractions risking license revocation or material punitive fines.'),
-  (1, 'MARKET', 'Top 3 Customer Concentration', 'GT', '60%', 4, 4, 'High', 'Top 3 clients account for over 60% of gross revenue, elevating customer churn impact.')
+  (1, 'DEBT_BURDEN', 'Debt-to-Income Ratio', 'GT', '40%', 4, 4, 'High', 'Debt obligations above 40% of verified income can materially weaken repayment capacity.'),
+  (1, 'REPAYMENT_CAPACITY', 'Debt Service Ratio', 'GT', '40%', 4, 5, 'Critical', 'Debt service above 40% of verified disposable income leaves limited repayment buffer.'),
+  (1, 'INCOME_STABILITY', 'Operating Cash Flow Deficit', 'LT', '0', 4, 5, 'Critical', 'Negative recurring cash flow directly threatens ongoing repayment ability.'),
+  (1, 'REPAYMENT_CAPACITY', 'Short-term Liquidity Ratio', 'LT', '1.0', 4, 4, 'High', 'Liquidity below 1.0 indicates insufficient near-term resources for obligations.'),
+  (1, 'INCOME_STABILITY', 'Income Volatility', 'GT', '30%', 3, 4, 'High', 'Large income variation reduces confidence in recurring repayment resources.'),
+  (1, 'CREDIT_BEHAVIOR', 'Late Payment Count', 'GT', '0', 4, 4, 'High', 'Recent late payments indicate elevated repayment behavior risk.'),
+  (1, 'COLLATERAL_GUARANTEE', 'Collateral Coverage Ratio', 'LT', '100%', 3, 4, 'High', 'Collateral value below the exposure leaves an unsecured recovery gap.'),
+  (1, 'KYC_DATA_QUALITY', 'Document Inconsistency', 'CONTAINS', 'inconsistent', 5, 5, 'Critical', 'Conflicting identity or financial records require verification before a credit decision.')
 ON CONFLICT DO NOTHING;
 
 -- Reset sequences
