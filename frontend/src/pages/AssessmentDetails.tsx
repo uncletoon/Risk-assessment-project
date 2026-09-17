@@ -28,6 +28,8 @@ import {
   ListTodo,
   User,
   Calculator,
+  UploadCloud,
+  FileWarning,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -65,6 +67,9 @@ export default function AssessmentDetails() {
   const [mitDept, setMitDept] = useState("Operations");
   const [mitDueDate, setMitDueDate] = useState("");
   const [mitSaving, setMitSaving] = useState(false);
+
+  // Privacy Sanitization State
+  const [sanitizing, setSanitizing] = useState(false);
 
   // AI Advisor State
   const [chatMessages, setChatMessages] = useState<
@@ -144,6 +149,24 @@ export default function AssessmentDetails() {
     } catch (err: any) {
       alert(`Error starting pipeline: ${err.message}`);
       setProcessing(false);
+    }
+  };
+
+  const handleUploadSanitizedInDetails = async (newFile: File) => {
+    if (!id) return;
+    try {
+      setSanitizing(true);
+      await api.uploadDocument(parseInt(id, 10), newFile, true);
+      const priv = await api.evaluateAssessmentPrivacy(parseInt(id, 10));
+      if (!priv.contains_personal_info) {
+        await handleRunPipeline();
+      } else {
+        await fetchDetails();
+      }
+    } catch (err: any) {
+      alert(`Error uploading replacement file: ${err.message}`);
+    } finally {
+      setSanitizing(false);
     }
   };
 
@@ -417,13 +440,68 @@ export default function AssessmentDetails() {
           </div>
         )}
 
-        {isFailed && (
-          <div className="mt-4 p-3 rounded-xl bg-error-container text-on-error-container text-xs font-bold flex items-center gap-2 border border-error/40">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>
-              Processing failed:{" "}
-              {assessment.failure_reason || "Unknown error occurred"}
-            </span>
+        {isFailed &&
+          !assessment.failure_reason?.includes("Personal information") && (
+            <div className="mt-4 p-3 rounded-xl bg-error-container text-on-error-container text-xs font-bold flex items-center gap-2 border border-error/40">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>
+                Processing failed:{" "}
+                {assessment.failure_reason || "Unknown error occurred"}
+              </span>
+            </div>
+          )}
+
+        {(assessment.progress_step?.includes("Personal Information") ||
+          assessment.failure_reason?.includes("Personal information")) && (
+          <div className="mt-4 p-5 rounded-2xl bg-surface-container-lowest border-2 border-error/50 shadow-xs space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-error/15 text-error flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container text-[10px] font-black uppercase tracking-wider">
+                  <FileWarning className="w-3 h-3" />
+                  <span>Personal Information Gate</span>
+                </div>
+                <h4 className="text-sm font-black text-primary">
+                  Document Contains Personal Information
+                </h4>
+                <p className="text-xs text-on-surface-variant font-medium">
+                  {assessment.failure_reason ||
+                    "Personal identifiers were detected in this document. Please sanitize your file and upload the clean version below to proceed with risk calculation."}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-surface-container border border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs font-bold text-primary">
+                Upload Sanitized Replacement Document
+              </span>
+              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 cursor-pointer shadow-xs transition-colors">
+                {sanitizing ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span>Sanitizing and Evaluating...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    <span>Select Clean Document</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  className="hidden"
+                  disabled={sanitizing}
+                  accept=".pdf,.docx,.xlsx,.xls,.csv,.txt"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleUploadSanitizedInDetails(e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+            </div>
           </div>
         )}
       </div>

@@ -19,6 +19,7 @@ const {
   extractDocumentFactsAndRisks,
   generatePostCalculationIntelligence,
   queryContextualAdvisor,
+  evaluateDocumentPrivacy,
 } = require("../integrations/gemini/geminiService");
 const { logAudit } = require("./auditService");
 const { ASSESSMENT_STATUSES } = require("../constants/riskConstants");
@@ -237,6 +238,32 @@ async function runAssessmentPipeline(assessmentId, userId = null) {
 
     if (!parsedDoc.text || parsedDoc.text.trim().length === 0) {
       throw new Error("Uploaded document contains no readable text content.");
+    }
+
+    // Privacy Gate: Verify document contains zero personal information
+    const privacyCheck = await evaluateDocumentPrivacy(parsedDoc.text);
+    if (privacyCheck.contains_personal_info) {
+      await pool.query(
+        `UPDATE assessments 
+         SET progress_step = $1, failure_reason = $2 
+         WHERE id = $3`,
+        [
+          "Personal Information Detected: Removal Required",
+          privacyCheck.summary ||
+            "Document contains personal identifiable information.",
+          assessmentId,
+        ],
+      );
+
+      const itemsDescription = (privacyCheck.detected_items || [])
+        .map((item) => `${item.type}: ${item.snippet}`)
+        .join("; ");
+
+      const error = new Error(
+        `Privacy Gate Rejected: Personal information detected in document. Please sanitize and re-upload. Detected: ${itemsDescription || privacyCheck.summary}`,
+      );
+      error.privacyEvaluation = privacyCheck;
+      throw error;
     }
 
     await pool.query(
@@ -770,10 +797,75 @@ async function getAssessments(organizationId = null) {
   return res.rows;
 }
 
+/**
+ * Evaluates the uploaded document of an assessment for personal information
+ */
+async function evaluateAssessmentPrivacy(assessmentId, userId = null) {
+  const assessRes = await pool.query(
+    "SELECT id, organization_id, title FROM assessments WHERE id = $1",
+    [assessmentId],
+  );
+  if (assessRes.rows.length === 0) {
+    throw new Error(`Assessment with ID ${assessmentId} not found.`);
+  }
+
+  const docRes = await pool.query(
+    "SELECT * FROM documents WHERE assessment_id = $1",
+    [assessmentId],
+  );
+  if (docRes.rows.length === 0) {
+    throw new Error("No document uploaded for this assessment yet.");
+  }
+
+  const documentRecord = docRes.rows[0];
+  const parsedDoc = await parseDocument(
+    documentRecord.file_path,
+    documentRecord.original_name,
+    documentRecord.mime_type,
+  );
+
+  const privacyResult = await evaluateDocumentPrivacy(parsedDoc.text || "");
+
+  const progressStep = privacyResult.contains_personal_info
+    ? "Personal Information Detected: Removal Required"
+    : "Privacy Validated: Clean";
+
+  await pool.query(
+    `UPDATE assessments 
+     SET progress_step = $1,
+         failure_reason = $2 
+     WHERE id = $3`,
+    [
+      progressStep,
+      privacyResult.contains_personal_info ? privacyResult.summary : null,
+      assessmentId,
+    ],
+  );
+
+  await logAudit(
+    userId,
+    assessRes.rows[0].organization_id,
+    "DOCUMENT_PRIVACY_EVALUATED",
+    "assessments",
+    assessmentId,
+    {
+      contains_personal_info: privacyResult.contains_personal_info,
+      detected_count: (privacyResult.detected_items || []).length,
+      summary: privacyResult.summary,
+    },
+  );
+
+  return {
+    assessmentId,
+    ...privacyResult,
+  };
+}
+
 module.exports = {
   createAssessment,
   attachDocument,
   runAssessmentPipeline,
   getAssessmentDetails,
   getAssessments,
+  evaluateAssessmentPrivacy,
 };

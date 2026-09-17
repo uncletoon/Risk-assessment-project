@@ -109,6 +109,19 @@ export interface AIRecommendation {
   mitigation_id?: number;
 }
 
+export interface DetectedPersonalInfoItem {
+  type: string;
+  snippet: string;
+  recommendation: string;
+}
+
+export interface PrivacyEvaluationResult {
+  assessmentId: number;
+  contains_personal_info: boolean;
+  summary: string;
+  detected_items: DetectedPersonalInfoItem[];
+}
+
 export interface MitigationAction {
   id: number;
   assessment_id: number;
@@ -227,6 +240,14 @@ export const api = {
       headers: getAuthHeader(),
     });
     return handleResponse<any>(res);
+  },
+
+  evaluateAssessmentPrivacy: async (assessmentId: number) => {
+    const res = await fetch(`/api/assessments/${assessmentId}/evaluate-privacy`, {
+      method: 'POST',
+      headers: getAuthHeader(),
+    });
+    return handleResponse<PrivacyEvaluationResult>(res);
   },
 
   // Mitigations
