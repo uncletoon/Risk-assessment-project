@@ -3,7 +3,7 @@
 // Orchestrates AI document extraction, intelligence generation, and grounded Q&A
 // ============================================================================
 
-const { ai, DEFAULT_MODEL } = require("./geminiClient");
+const { generateContentWithFallback } = require("./geminiClient");
 const {
   buildDocumentExtractionPrompt,
   buildPostCalculationIntelligencePrompt,
@@ -46,55 +46,29 @@ async function extractDocumentFactsAndRisks(
     activeRules,
   );
 
-  let attempts = 0;
-  const maxAttempts = 2;
-  let lastError = null;
+  const response = await generateContentWithFallback({
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      temperature: 0.2,
+    },
+  });
 
-  while (attempts < maxAttempts) {
-    attempts++;
-    try {
-      const response = await ai.models.generateContent({
-        model: DEFAULT_MODEL,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.2,
-        },
-      });
+  const parsed = parseGeminiJson(response.text);
 
-      const parsed = parseGeminiJson(response.text);
-
-      if (!parsed.extracted_facts || !Array.isArray(parsed.extracted_facts)) {
-        parsed.extracted_facts = [];
-      }
-      if (!parsed.candidate_risks || !Array.isArray(parsed.candidate_risks)) {
-        parsed.candidate_risks = [];
-      }
-
-      return {
-        document_summary:
-          parsed.document_summary || "Document extracted successfully.",
-        extracted_facts: parsed.extracted_facts,
-        candidate_risks: parsed.candidate_risks,
-      };
-    } catch (err) {
-      lastError = err;
-      const causeInfo = err.cause
-        ? ` (${err.cause.code || err.cause.message || err.cause})`
-        : "";
-      console.warn(
-        `Gemini extraction attempt ${attempts} failed:`,
-        err.message + causeInfo,
-      );
-      if (attempts < maxAttempts) {
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-    }
+  if (!parsed.extracted_facts || !Array.isArray(parsed.extracted_facts)) {
+    parsed.extracted_facts = [];
+  }
+  if (!parsed.candidate_risks || !Array.isArray(parsed.candidate_risks)) {
+    parsed.candidate_risks = [];
   }
 
-  throw new Error(
-    `Gemini Document Extraction failed after ${maxAttempts} attempts: ${lastError?.message}`,
-  );
+  return {
+    document_summary:
+      parsed.document_summary || "Document extracted successfully.",
+    extracted_facts: parsed.extracted_facts,
+    candidate_risks: parsed.candidate_risks,
+  };
 }
 
 /**
@@ -106,8 +80,7 @@ async function generatePostCalculationIntelligence(assessmentContext) {
   const prompt = buildPostCalculationIntelligencePrompt(assessmentContext);
 
   try {
-    const response = await ai.models.generateContent({
-      model: DEFAULT_MODEL,
+    const response = await generateContentWithFallback({
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -211,8 +184,7 @@ async function queryContextualAdvisor(
   );
 
   try {
-    const response = await ai.models.generateContent({
-      model: DEFAULT_MODEL,
+    const response = await generateContentWithFallback({
       contents: prompt,
       config: {
         systemInstruction:
@@ -287,8 +259,7 @@ async function evaluateDocumentPrivacy(documentText) {
 
   try {
     const prompt = buildPrivacyEvaluationPrompt(documentText || "");
-    const response = await ai.models.generateContent({
-      model: DEFAULT_MODEL,
+    const response = await generateContentWithFallback({
       contents: prompt,
       config: {
         responseMimeType: "application/json",
