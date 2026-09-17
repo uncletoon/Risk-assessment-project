@@ -34,6 +34,7 @@ import {
   ToggleRight,
   ExternalLink,
   ChevronRight,
+  EyeOff,
 } from "lucide-react";
 
 export default function UserManagement() {
@@ -81,6 +82,7 @@ export default function UserManagement() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [gender, setGender] = useState("Male");
   const [password, setPassword] = useState("Officer@123");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("RISK_OFFICER");
   const [department, setDepartment] = useState("Corporate Risk");
   const [saving, setSaving] = useState(false);
@@ -1044,17 +1046,33 @@ export default function UserManagement() {
                     </span>
                   )}
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => handlePasswordChange(e.target.value)}
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
-                    passwordError
-                      ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
-                      : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    className={`w-full px-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
+                      passwordError
+                        ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
+                        : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    className="absolute inset-y-0 right-0 px-3 flex items-center text-primary hover:text-secondary cursor-pointer"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 {passwordError && (
                   <p className="text-[10px] text-red-500 font-bold mt-1">
                     {passwordError}
