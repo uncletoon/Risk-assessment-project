@@ -1,7 +1,0 @@
-Quarter,Portfolio_Size_RWF,NPL_Ratio,Capital_Adequacy_Ratio,Liquidity_Ratio,Operating_Cash_Flow_RWF,Status
-Q1-2024,450000000,4.2%,18.5%,2.4,32000000,Compliant
-Q2-2024,480000000,4.8%,17.8%,2.1,28000000,Compliant
-Q3-2024,520000000,5.6%,16.9%,1.9,24000000,Review Required
-Q4-2024,580000000,6.4%,15.8%,1.8,19000000,Warning
-Q1-2025,620000000,7.1%,15.2%,1.6,15000000,Critical Oversight
-

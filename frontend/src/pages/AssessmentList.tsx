@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   RefreshCw,
   FileText,
+  Trash2,
 } from "lucide-react";
 
 export default function AssessmentList() {
@@ -32,6 +33,23 @@ export default function AssessmentList() {
       setError(err.message || "Failed to load assessments");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (assessment: Assessment) => {
+    const confirmed = window.confirm(
+      `Delete "${assessment.title}" permanently? This removes the assessment, uploaded document, scores, evidence, recommendations, and mitigation records. This action cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setError(null);
+      await api.deleteAssessment(assessment.id);
+      setAssessments((current) =>
+        current.filter((item) => item.id !== assessment.id),
+      );
+    } catch (err: any) {
+      setError(err.message || "Failed to delete assessment");
     }
   };
 
@@ -240,6 +258,16 @@ export default function AssessmentList() {
                             <FileText className="w-4 h-4" />
                           </Link>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(a)}
+                          className="p-1.5 rounded-lg text-error hover:bg-error/10 transition-colors cursor-pointer"
+                          title="Delete assessment"
+                          aria-label={`Delete ${a.title}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>

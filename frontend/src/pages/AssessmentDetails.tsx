@@ -8,7 +8,6 @@ import {
 } from "../lib/api";
 import {
   ShieldAlert,
-  ShieldCheck,
   Building2,
   FileSpreadsheet,
   AlertTriangle,
@@ -44,7 +43,10 @@ import {
 export default function AssessmentDetails() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") || "executive";
+  const initialTab =
+    searchParams.get("tab") === "controls"
+      ? "executive"
+      : searchParams.get("tab") || "executive";
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [data, setData] = useState<AssessmentDetailsResponse | null>(null);
@@ -610,21 +612,6 @@ export default function AssessmentDetails() {
 
         <button
           onClick={() => {
-            setActiveTab("controls");
-            setSearchParams({ tab: "controls" });
-          }}
-          className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
-            activeTab === "controls"
-              ? "border-secondary text-secondary bg-surface-container-lowest rounded-t-xl shadow-xs font-black"
-              : "border-transparent text-primary hover:text-secondary"
-          }`}
-        >
-          <ShieldCheck className="w-4 h-4 text-secondary" />
-          <span>Controls Evaluation</span>
-        </button>
-
-        <button
-          onClick={() => {
             setActiveTab("recommendations");
             setSearchParams({ tab: "recommendations" });
           }}
@@ -1051,85 +1038,7 @@ export default function AssessmentDetails() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 4: INTERNAL CONTROLS EVALUATION */}
-      {/* ========================================================================= */}
-      {activeTab === "controls" && (
-        <div className="bg-surface-container-lowest p-5 sm:p-6 rounded-2xl border border-outline-variant shadow-xs space-y-4">
-          <div>
-            <h2 className="text-base font-bold text-primary">
-              Internal Controls & Mitigation Defenses
-            </h2>
-            <p className="text-xs font-medium text-on-surface-variant">
-              Internal controls extracted from the document reduce Inherent Risk
-              to Residual Risk. If no controls are mentioned, ERIDSS flags
-              "INSUFFICIENT DATA".
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {identifiedRisks.map((risk) => (
-              <div
-                key={risk.id}
-                className="p-4 rounded-xl border border-outline-variant bg-surface-container-low space-y-2 text-xs"
-              >
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded bg-surface-container text-primary border border-outline-variant">
-                      {risk.category_code}
-                    </span>
-                    <strong className="text-sm font-bold text-primary">
-                      {risk.risk_name}
-                    </strong>
-                  </div>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${
-                      risk.control_status === "EVALUATED"
-                        ? "bg-tertiary-container/20 text-on-tertiary-container border-tertiary-fixed-dim/40"
-                        : "bg-surface-container text-primary border-outline-variant"
-                    }`}
-                  >
-                    {risk.control_status === "EVALUATED"
-                      ? `${risk.control_score}% Effectiveness`
-                      : "INSUFFICIENT DATA"}
-                  </span>
-                </div>
-
-                <p className="text-xs text-on-surface font-medium leading-relaxed">
-                  {risk.controls_list && risk.controls_list.length > 0
-                    ? risk.controls_list
-                        .map(
-                          (c) =>
-                            `${c.control_name} (${c.effectiveness_pct}% effectiveness) - ${c.source_evidence || ""}`,
-                        )
-                        .join(" | ")
-                    : risk.explanation ||
-                      "No formal internal control mechanisms or defensive safeguards detected in the source document."}
-                </p>
-
-                <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-bold text-primary">
-                  <span>
-                    Inherent: <strong>{risk.inherent_risk}/25</strong>
-                  </span>
-                  <span>•</span>
-                  <span>
-                    Control Deduction: <strong>-{risk.control_score}%</strong>
-                  </span>
-                  <span>•</span>
-                  <span>
-                    Residual:{" "}
-                    <strong className="text-secondary">
-                      {Number(risk.residual_risk).toFixed(1)}
-                    </strong>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* TAB 5: AI RECOMMENDATIONS & DECISION ROADMAP */}
+      {/* TAB 4: AI RECOMMENDATIONS & DECISION ROADMAP */}
       {/* ========================================================================= */}
       {activeTab === "recommendations" && (
         <div className="bg-surface-container-lowest p-5 sm:p-6 rounded-2xl border border-outline-variant shadow-xs space-y-4">
@@ -1216,7 +1125,7 @@ export default function AssessmentDetails() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 6: GROUNDED AI RISK ADVISOR (CHAT) */}
+      {/* TAB 5: GROUNDED AI RISK ADVISOR (CHAT) */}
       {/* ========================================================================= */}
       {activeTab === "advisor" && (
         <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-xs flex flex-col h-[650px] overflow-hidden">

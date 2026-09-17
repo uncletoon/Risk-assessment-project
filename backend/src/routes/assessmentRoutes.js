@@ -7,6 +7,7 @@ const express = require("express");
 const router = express.Router();
 const {
   createAssessmentHandler,
+  deleteAssessmentHandler,
   uploadDocumentHandler,
   startAssessmentPipelineHandler,
   getAssessmentDetailsHandler,
@@ -21,6 +22,7 @@ router.use(protect);
 
 router.post("/", createAssessmentHandler);
 router.get("/", listAssessmentsHandler);
+router.delete("/:id", deleteAssessmentHandler);
 router.get("/:id", getAssessmentDetailsHandler);
 router.get("/:id/status", getAssessmentStatusHandler);
 router.post("/:id/evaluate-privacy", evaluateAssessmentPrivacyHandler);

@@ -201,6 +201,14 @@ export const api = {
     return handleResponse<AssessmentDetailsResponse>(res);
   },
 
+  deleteAssessment: async (assessmentId: number) => {
+    const res = await fetch(`/api/assessments/${assessmentId}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    });
+    return handleResponse<{ message: string; assessment: Assessment }>(res);
+  },
+
   createAssessment: async (data: {
     organizationId: number;
     title?: string;

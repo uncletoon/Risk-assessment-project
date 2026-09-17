@@ -95,6 +95,64 @@ async function createAssessment({
 }
 
 /**
+ * Deletes an assessment and its dependent records, then removes its uploaded file.
+ */
+async function deleteAssessment(assessmentId, userId = null) {
+  const client = await pool.connect();
+  let assessment;
+  let documentPath;
+
+  try {
+    await client.query("BEGIN");
+
+    const assessmentRes = await client.query(
+      "SELECT id, organization_id, title FROM assessments WHERE id = $1 FOR UPDATE",
+      [assessmentId],
+    );
+    if (assessmentRes.rows.length === 0) {
+      throw new Error(`Assessment ${assessmentId} not found.`);
+    }
+    assessment = assessmentRes.rows[0];
+
+    const documentRes = await client.query(
+      "SELECT file_path FROM documents WHERE assessment_id = $1",
+      [assessmentId],
+    );
+    documentPath = documentRes.rows[0]?.file_path || null;
+
+    await client.query("DELETE FROM assessments WHERE id = $1", [assessmentId]);
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  if (documentPath) {
+    await fs.promises.unlink(documentPath).catch((err) => {
+      if (err.code !== "ENOENT") {
+        console.warn(
+          `Could not remove assessment document ${documentPath}:`,
+          err.message,
+        );
+      }
+    });
+  }
+
+  await logAudit(
+    userId,
+    assessment.organization_id,
+    "ASSESSMENT_DELETED",
+    "assessments",
+    assessment.id,
+    { title: assessment.title },
+  );
+
+  return assessment;
+}
+
+/**
  * Attaches exactly ONE document to an assessment (Enforces Single-Document Rule)
  */
 async function attachDocument({
@@ -863,6 +921,7 @@ async function evaluateAssessmentPrivacy(assessmentId, userId = null) {
 
 module.exports = {
   createAssessment,
+  deleteAssessment,
   attachDocument,
   runAssessmentPipeline,
   getAssessmentDetails,
