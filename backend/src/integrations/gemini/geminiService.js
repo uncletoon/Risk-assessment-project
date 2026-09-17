@@ -9,6 +9,7 @@ const {
   buildPostCalculationIntelligencePrompt,
   buildAdvisorGroundedPrompt,
 } = require("./prompts/riskPrompts");
+const { buildPrivacyEvaluationPrompt } = require("./prompts/privacyPrompts");
 
 /**
  * Helper to safely extract JSON from Gemini text response
@@ -232,8 +233,117 @@ async function queryContextualAdvisor(
   }
 }
 
+/**
+ * Helper to perform deterministic regex privacy pattern screening
+ */
+function scanDeterministicPersonalInfo(text) {
+  if (!text) return [];
+  const findings = [];
+
+  // Personal Email Provider detection
+  const personalEmailRegex =
+    /\b[A-Za-z0-9._%+-]+@(gmail\.com|yahoo\.com|hotmail\.com|outlook\.com|icloud\.com)\b/gi;
+  let match;
+  while ((match = personalEmailRegex.exec(text)) !== null) {
+    findings.push({
+      type: "Email Address",
+      snippet: match[0],
+      recommendation: "Remove or mask individual personal email address.",
+    });
+  }
+
+  // Phone number detection
+  const phoneRegex = /(?:\+?250|0)\s?[7][2389]\d{1}[\s.-]?\d{3}[\s.-]?\d{3}\b/g;
+  while ((match = phoneRegex.exec(text)) !== null) {
+    findings.push({
+      type: "Phone Number",
+      snippet: match[0],
+      recommendation:
+        "Remove personal phone number or replace with sanitized placeholder.",
+    });
+  }
+
+  // National ID 16 digits pattern (common format in East Africa / Rwanda)
+  const idRegex = /\b1\s?19\d{2}\s?[78]\s?\d{7}\s?\d{1}\s?\d{2}\b/g;
+  while ((match = idRegex.exec(text)) !== null) {
+    findings.push({
+      type: "National ID",
+      snippet: match[0],
+      recommendation: "Remove citizen national identity number.",
+    });
+  }
+
+  return findings;
+}
+
+/**
+ * Evaluates document text for personal identifiers using Gemini AI and pattern heuristics
+ * @param {string} documentText
+ * @returns {Promise<{ contains_personal_info: boolean, summary: string, detected_items: Array }>}
+ */
+async function evaluateDocumentPrivacy(documentText) {
+  const deterministicItems = scanDeterministicPersonalInfo(documentText || "");
+
+  try {
+    const prompt = buildPrivacyEvaluationPrompt(documentText || "");
+    const response = await ai.models.generateContent({
+      model: DEFAULT_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        temperature: 0.1,
+      },
+    });
+
+    const parsed = parseGeminiJson(response.text);
+    const aiItems = Array.isArray(parsed.detected_items)
+      ? parsed.detected_items
+      : [];
+
+    // Merge deterministic and AI findings, deduplicating by snippet
+    const seen = new Set();
+    const mergedItems = [];
+
+    for (const item of [...aiItems, ...deterministicItems]) {
+      const key = (item.snippet || "").trim().toLowerCase();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        mergedItems.push(item);
+      }
+    }
+
+    const hasPersonalInfo =
+      mergedItems.length > 0 || Boolean(parsed.contains_personal_info);
+
+    return {
+      contains_personal_info: hasPersonalInfo,
+      summary:
+        parsed.summary ||
+        (hasPersonalInfo
+          ? `Personal information detected (${mergedItems.length} items). Please sanitize before assessment.`
+          : "Privacy verification passed: No personal information detected."),
+      detected_items: mergedItems,
+    };
+  } catch (err) {
+    console.warn(
+      "AI Privacy Evaluation fallback to deterministic screening:",
+      err.message,
+    );
+
+    const hasPersonalInfo = deterministicItems.length > 0;
+    return {
+      contains_personal_info: hasPersonalInfo,
+      summary: hasPersonalInfo
+        ? `Personal information detected (${deterministicItems.length} items via pattern screening). Please sanitize.`
+        : "Privacy verification passed via standard pattern screening.",
+      detected_items: deterministicItems,
+    };
+  }
+}
+
 module.exports = {
   extractDocumentFactsAndRisks,
   generatePostCalculationIntelligence,
   queryContextualAdvisor,
+  evaluateDocumentPrivacy,
 };

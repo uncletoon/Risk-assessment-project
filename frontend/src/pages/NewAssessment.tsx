@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, RuleGroup } from "../lib/api";
+import { api, RuleGroup, PrivacyEvaluationResult } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import {
   FilePlus2,
@@ -12,8 +12,12 @@ import {
   User,
   Sliders,
   ShieldCheck,
+  ShieldAlert,
   Layers,
   Info,
+  RefreshCw,
+  FileWarning,
+  Trash2,
 } from "lucide-react";
 
 export default function NewAssessment() {
@@ -40,6 +44,15 @@ export default function NewAssessment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // AI Privacy Evaluation Gate State
+  const [createdAssessmentId, setCreatedAssessmentId] = useState<number | null>(
+    null,
+  );
+  const [privacyEvaluation, setPrivacyEvaluation] =
+    useState<PrivacyEvaluationResult | null>(null);
+  const [sanitizedFile, setSanitizedFile] = useState<File | null>(null);
+  const [revalidating, setRevalidating] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -167,10 +180,25 @@ export default function NewAssessment() {
         ruleGroupId: selectedRuleGroupId,
       });
 
-      setStatusMessage("Uploading and extracting document content...");
+      setStatusMessage("Uploading and storing document content...");
       await api.uploadDocument(assessment.id, file);
 
-      setStatusMessage("Evaluating facts against selected Risk Rule Engine...");
+      setStatusMessage(
+        "Evaluating document for personal identifiable information...",
+      );
+      const privacyResult = await api.evaluateAssessmentPrivacy(assessment.id);
+
+      if (privacyResult.contains_personal_info) {
+        setCreatedAssessmentId(assessment.id);
+        setPrivacyEvaluation(privacyResult);
+        setLoading(false);
+        setStatusMessage(null);
+        return;
+      }
+
+      setStatusMessage(
+        "Privacy verified. Evaluating facts against selected Risk Rule Engine...",
+      );
       api.processAssessment(assessment.id).catch((err) => {
         console.warn(
           "Background pipeline error (will be reflected in assessment state):",
@@ -184,6 +212,49 @@ export default function NewAssessment() {
       setError(err.message || "Failed to initialize assessment");
       setLoading(false);
     }
+  };
+
+  const handleRevalidateSanitizedFile = async () => {
+    if (!createdAssessmentId || !sanitizedFile) return;
+    try {
+      setRevalidating(true);
+      setError(null);
+      setStatusMessage("Uploading sanitized replacement document...");
+      await api.uploadDocument(createdAssessmentId, sanitizedFile, true);
+
+      setStatusMessage(
+        "Evaluating document for personal identifiable information again...",
+      );
+      const result = await api.evaluateAssessmentPrivacy(createdAssessmentId);
+
+      if (result.contains_personal_info) {
+        setPrivacyEvaluation(result);
+        setRevalidating(false);
+        setStatusMessage(null);
+        return;
+      }
+
+      setPrivacyEvaluation(null);
+      setStatusMessage(
+        "Privacy verified. Evaluating facts against selected Risk Rule Engine...",
+      );
+      api.processAssessment(createdAssessmentId).catch((err) => {
+        console.warn("Background pipeline error:", err);
+      });
+      navigate(`/assessments/${createdAssessmentId}`);
+    } catch (err: any) {
+      console.error("Re validation error:", err);
+      setError(err.message || "Failed to re validate document");
+      setRevalidating(false);
+    }
+  };
+
+  const handleCancelPrivacyReview = () => {
+    setPrivacyEvaluation(null);
+    setCreatedAssessmentId(null);
+    setSanitizedFile(null);
+    setLoading(false);
+    setStatusMessage(null);
   };
 
   const activeOrg =
@@ -218,274 +289,397 @@ export default function NewAssessment() {
         </div>
       )}
 
-      {/* Main Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-surface-container-lowest p-5 sm:p-6 rounded-2xl border border-outline-variant shadow-xs space-y-6"
-      >
-        {/* Step 1: Risk Rule Engine & Workspace Selection */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-low border border-outline-variant space-y-4">
-          <div className="flex items-center justify-between border-b border-outline-variant pb-3">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-secondary" />
-              <h3 className="text-xs font-black text-primary uppercase tracking-wider">
-                Risk Rule Engine Selection
-              </h3>
+      {/* Privacy Screening Gate Banner & Action Card */}
+      {privacyEvaluation && privacyEvaluation.contains_personal_info ? (
+        <div className="bg-surface-container-lowest p-6 rounded-2xl border-2 border-error/50 shadow-md space-y-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-error/15 text-error flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-7 h-7" />
             </div>
-            {selectedGroup && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/30">
-                {selectedGroup.rules_count ?? 0} Rules Configured
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-error-container text-on-error-container text-[11px] font-black uppercase tracking-wider">
+                <FileWarning className="w-3.5 h-3.5" />
+                <span>Privacy Gate: Personal Information Detected</span>
+              </div>
+              <h2 className="text-lg font-black text-primary">
+                Sanitization Required Before Assessment
+              </h2>
+              <p className="text-xs text-on-surface-variant font-medium">
+                Our AI Privacy Auditor detected individual personal identifiers
+                in the uploaded document. To comply with data privacy policies,
+                remove or redact these items from your file and upload the
+                sanitized version below.
+              </p>
+            </div>
+          </div>
+
+          {/* Detected Items Breakdown */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-primary flex items-center justify-between">
+              <span>
+                Detected Personal Identifiers (
+                {privacyEvaluation.detected_items?.length || 0})
               </span>
-            )}
-          </div>
+              <span className="text-[11px] text-error font-bold">
+                Action: Redact from document
+              </span>
+            </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
-                Select Rule Engine Group{" "}
-                <span className="text-secondary">*</span>
-              </label>
-              <select
-                value={selectedRuleGroupId || ""}
-                onChange={(e) => setSelectedRuleGroupId(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-              >
-                {ruleGroups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name} ({g.rules_count ?? 0} rules)
-                  </option>
-                ))}
-              </select>
-              {selectedGroup?.description && (
-                <p className="text-[11px] text-on-surface-variant font-medium mt-1.5 leading-relaxed">
-                  {selectedGroup.description}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
-                Assigned Workspace / Organization
-              </label>
-              {isSystemAdmin && organizations.length > 1 ? (
-                <select
-                  value={selectedOrgId}
-                  onChange={(e) => setSelectedOrgId(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {privacyEvaluation.detected_items?.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant space-y-2 text-xs"
                 >
-                  {organizations.map((org) => (
-                    <option key={org.id} value={org.id}>
-                      {org.name} ({org.industry})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-bold text-primary">
-                  <Building2 className="w-4 h-4 text-secondary shrink-0" />
-                  <span className="truncate">
-                    {user?.organization_name || activeOrg?.name || "Enterprise"}{" "}
-                    {activeOrg?.industry ? `(${activeOrg.industry})` : ""}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded-md bg-error/10 text-error font-black text-[10px] uppercase">
+                      {item.type}
+                    </span>
+                    <span className="text-[10px] text-on-surface-variant font-semibold">
+                      Flag #{idx + 1}
+                    </span>
+                  </div>
+                  <div className="font-mono text-xs bg-surface-container-lowest px-2.5 py-1.5 rounded-lg border border-outline-variant text-primary font-bold break-all">
+                    {item.snippet}
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant font-medium">
+                    {item.recommendation}
+                  </p>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Active Categories Badge */}
-          <div className="pt-2">
-            <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-              Active Category Weights:
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {activeCategories.map((c) => (
-                <span
-                  key={c.code}
-                  className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-container-lowest text-primary border border-outline-variant"
-                >
-                  {c.name || c.code}{" "}
-                  <strong className="text-secondary">
-                    ({c.default_weight}%)
-                  </strong>
-                </span>
               ))}
             </div>
           </div>
+
+          {/* Re-upload Sanitized Document Box */}
+          <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant space-y-3">
+            <h4 className="text-xs font-black text-primary uppercase tracking-wider">
+              Upload Clean Sanitized Document
+            </h4>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <label className="flex-1 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-surface-container-lowest hover:bg-surface-container-high border-2 border-dashed border-outline-variant text-xs font-bold text-primary cursor-pointer transition-colors">
+                <UploadCloud className="w-4 h-4 text-secondary" />
+                <span>
+                  {sanitizedFile
+                    ? sanitizedFile.name
+                    : "Select Sanitized File (PDF, DOCX, XLSX, TXT)"}
+                </span>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.docx,.xlsx,.xls,.csv,.txt"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setSanitizedFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={handleRevalidateSanitizedFile}
+                disabled={!sanitizedFile || revalidating}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 disabled:opacity-50 transition-all cursor-pointer shadow-sm shrink-0"
+              >
+                {revalidating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span>Evaluating Privacy...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Validate Sanitized Document Again</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={handleCancelPrivacyReview}
+                className="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+              >
+                Cancel and Restart Form
+              </button>
+            </div>
+          </div>
         </div>
-
-        {/* Step 2: Client Information (Stored in DB only, NOT for AI) */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-low border border-outline-variant space-y-4">
-          <div className="flex items-center justify-between border-b border-outline-variant pb-3">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-secondary" />
-              <h3 className="text-xs font-black text-primary uppercase tracking-wider">
-                Client Identification (Database Storage Only)
-              </h3>
+      ) : (
+        /* Main Form */
+        <form
+          onSubmit={handleSubmit}
+          className="bg-surface-container-lowest p-5 sm:p-6 rounded-2xl border border-outline-variant shadow-xs space-y-6"
+        >
+          {/* Step 1: Risk Rule Engine & Workspace Selection */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-low border border-outline-variant space-y-4">
+            <div className="flex items-center justify-between border-b border-outline-variant pb-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-secondary" />
+                <h3 className="text-xs font-black text-primary uppercase tracking-wider">
+                  Risk Rule Engine Selection
+                </h3>
+              </div>
+              {selectedGroup && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-secondary/15 text-secondary border border-secondary/30">
+                  {selectedGroup.rules_count ?? 0} Rules Configured
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-1 text-[10px] font-bold text-tertiary">
-              <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
-              <span>Excluded from AI Prompts</span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
+                  Select Rule Engine Group{" "}
+                  <span className="text-secondary">*</span>
+                </label>
+                <select
+                  value={selectedRuleGroupId || ""}
+                  onChange={(e) =>
+                    setSelectedRuleGroupId(Number(e.target.value))
+                  }
+                  className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                >
+                  {ruleGroups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} ({g.rules_count ?? 0} rules)
+                    </option>
+                  ))}
+                </select>
+                {selectedGroup?.description && (
+                  <p className="text-[11px] text-on-surface-variant font-medium mt-1.5 leading-relaxed">
+                    {selectedGroup.description}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
+                  Assigned Workspace / Organization
+                </label>
+                {isSystemAdmin && organizations.length > 1 ? (
+                  <select
+                    value={selectedOrgId}
+                    onChange={(e) => setSelectedOrgId(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                  >
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name} ({org.industry})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-bold text-primary">
+                    <Building2 className="w-4 h-4 text-secondary shrink-0" />
+                    <span className="truncate">
+                      {user?.organization_name ||
+                        activeOrg?.name ||
+                        "Enterprise"}{" "}
+                      {activeOrg?.industry ? `(${activeOrg.industry})` : ""}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Active Categories Badge */}
+            <div className="pt-2">
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                Active Category Weights:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {activeCategories.map((c) => (
+                  <span
+                    key={c.code}
+                    className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-container-lowest text-primary border border-outline-variant"
+                  >
+                    {c.name || c.code}{" "}
+                    <strong className="text-secondary">
+                      ({c.default_weight}%)
+                    </strong>
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Privacy Notice Banner */}
-          <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-start gap-2.5 text-xs text-on-surface-variant">
-            <Info className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
-            <p className="text-[11px] leading-relaxed">
-              <strong>Confidentiality Notice:</strong> The client name and
-              identification number are stored exclusively in the database for
-              tracking and compliance. They are{" "}
-              <strong>never transmitted to AI models</strong>, ensuring
-              objective and anonymous risk calculation based strictly on
-              imported document evidence.
-            </p>
-          </div>
+          {/* Step 2: Client Information (Stored in DB only, NOT for AI) */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-low border border-outline-variant space-y-4">
+            <div className="flex items-center justify-between border-b border-outline-variant pb-3">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-secondary" />
+                <h3 className="text-xs font-black text-primary uppercase tracking-wider">
+                  Client Identification (Database Storage Only)
+                </h3>
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-tertiary">
+                <ShieldCheck className="w-3.5 h-3.5 text-tertiary" />
+                <span>Excluded from AI Prompts</span>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Privacy Notice Banner */}
+            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-start gap-2.5 text-xs text-on-surface-variant">
+              <Info className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
+              <p className="text-[11px] leading-relaxed">
+                <strong>Confidentiality Notice:</strong> The client name and
+                identification number are stored exclusively in the database for
+                tracking and compliance. They are{" "}
+                <strong>never transmitted to AI models</strong>, ensuring
+                objective and anonymous risk calculation based strictly on
+                imported document evidence.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
+                  Client / User Full Name{" "}
+                  <span className="text-secondary">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={clientName}
+                  onChange={(e) => {
+                    setClientName(e.target.value);
+                    if (!title || title.startsWith("Client Risk Assessment")) {
+                      setTitle(`Client Risk Assessment - ${e.target.value}`);
+                    }
+                  }}
+                  placeholder="e.g. Alice Uwase Mugabo"
+                  className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
+                  Client Number / National ID
+                </label>
+                <input
+                  type="text"
+                  value={clientIdentifier}
+                  onChange={(e) => setClientIdentifier(e.target.value)}
+                  placeholder="e.g. 1199880012345678 or ACC-9842"
+                  className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
-                Client / User Full Name{" "}
-                <span className="text-secondary">*</span>
+                Assessment Title / Label
               </label>
               <input
                 type="text"
                 required
-                value={clientName}
-                onChange={(e) => {
-                  setClientName(e.target.value);
-                  if (!title || title.startsWith("Client Risk Assessment")) {
-                    setTitle(`Client Risk Assessment - ${e.target.value}`);
-                  }
-                }}
-                placeholder="e.g. Alice Uwase Mugabo"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Client Risk Assessment - Alice Uwase"
                 className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
-                Client Number / National ID
+          {/* Step 3: Single Document Upload */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-black uppercase tracking-wider text-primary">
+                Attach Single Assessment Document{" "}
+                <span className="text-secondary">*</span>
               </label>
-              <input
-                type="text"
-                value={clientIdentifier}
-                onChange={(e) => setClientIdentifier(e.target.value)}
-                placeholder="e.g. 1199880012345678 or ACC-9842"
-                className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <span className="text-[11px] text-on-surface-variant font-semibold">
+                PDF, DOCX, XLSX, CSV, TXT (Max 25MB)
+              </span>
+            </div>
+
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center transition-all duration-200 ${
+                dragActive
+                  ? "border-primary bg-primary/5"
+                  : file
+                    ? "border-secondary/60 bg-secondary/5"
+                    : "border-outline-variant hover:border-primary/50 bg-surface-container-low"
+              }`}
+            >
+              {file ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-2xl bg-secondary/15 text-secondary flex items-center justify-center mb-3">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-extrabold text-primary">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-on-surface-variant font-medium mt-1">
+                    {(file.size / (1024 * 1024)).toFixed(2)} MB • Document ready
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setFile(null)}
+                    className="mt-3 text-xs font-bold text-secondary hover:underline cursor-pointer"
+                  >
+                    Change Attached Document
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-container text-on-surface-variant flex items-center justify-center mb-3">
+                    <UploadCloud className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-extrabold text-primary">
+                    Drag and drop client financial document or KYC record here
+                  </p>
+                  <p className="text-xs text-on-surface-variant font-medium mt-1">
+                    Supports bank statements, pay slips, credit reports, and
+                    balance sheets
+                  </p>
+                  <label className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-xs font-bold text-primary cursor-pointer transition-colors">
+                    <span>Browse Document</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.docx,.xlsx,.xls,.csv,.txt"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-primary mb-1.5 uppercase tracking-wider">
-              Assessment Title / Label
-            </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Client Risk Assessment - Alice Uwase"
-              className="w-full px-3.5 py-2.5 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+          {/* Submit */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-outline-variant">
+            <p className="text-xs text-on-surface-variant font-semibold text-center sm:text-left">
+              {statusMessage ||
+                "Ready to execute deterministic calculations and AI risk discovery."}
+            </p>
+
+            <button
+              type="submit"
+              disabled={loading || !file || !clientName.trim()}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 disabled:opacity-50 transition-all cursor-pointer shadow-sm"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+                  <span>Processing Assessment...</span>
+                </>
+              ) : (
+                <>
+                  <span>Execute Risk Assessment</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
           </div>
-        </div>
-
-        {/* Step 3: Single Document Upload */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-black uppercase tracking-wider text-primary">
-              Attach Single Assessment Document{" "}
-              <span className="text-secondary">*</span>
-            </label>
-            <span className="text-[11px] text-on-surface-variant font-semibold">
-              PDF, DOCX, XLSX, CSV, TXT (Max 25MB)
-            </span>
-          </div>
-
-          <div
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center transition-all duration-200 ${
-              dragActive
-                ? "border-primary bg-primary/5"
-                : file
-                  ? "border-secondary/60 bg-secondary/5"
-                  : "border-outline-variant hover:border-primary/50 bg-surface-container-low"
-            }`}
-          >
-            {file ? (
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-2xl bg-secondary/15 text-secondary flex items-center justify-center mb-3">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-extrabold text-primary">
-                  {file.name}
-                </p>
-                <p className="text-xs text-on-surface-variant font-medium mt-1">
-                  {(file.size / (1024 * 1024)).toFixed(2)} MB • Document ready
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setFile(null)}
-                  className="mt-3 text-xs font-bold text-secondary hover:underline cursor-pointer"
-                >
-                  Change Attached Document
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-2xl bg-surface-container text-on-surface-variant flex items-center justify-center mb-3">
-                  <UploadCloud className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-extrabold text-primary">
-                  Drag and drop client financial document or KYC record here
-                </p>
-                <p className="text-xs text-on-surface-variant font-medium mt-1">
-                  Supports bank statements, pay slips, credit reports, and
-                  balance sheets
-                </p>
-                <label className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant text-xs font-bold text-primary cursor-pointer transition-colors">
-                  <span>Browse Document</span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf,.docx,.xlsx,.xls,.csv,.txt"
-                    onChange={handleFileChange}
-                  />
-                </label>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Submit */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-outline-variant">
-          <p className="text-xs text-on-surface-variant font-semibold text-center sm:text-left">
-            {statusMessage ||
-              "Ready to execute deterministic calculations and AI risk discovery."}
-          </p>
-
-          <button
-            type="submit"
-            disabled={loading || !file || !clientName.trim()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 disabled:opacity-50 transition-all cursor-pointer shadow-sm"
-          >
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
-                <span>Processing Assessment...</span>
-              </>
-            ) : (
-              <>
-                <span>Execute Risk Assessment</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 }

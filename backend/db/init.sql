@@ -4,6 +4,7 @@
 -- ============================================================================
 
 -- Drop existing tables in reverse dependency order
+DROP TABLE IF EXISTS employee_submissions CASCADE;
 DROP TABLE IF EXISTS audit_logs CASCADE;
 DROP TABLE IF EXISTS assessment_history CASCADE;
 DROP TABLE IF EXISTS mitigation_actions CASCADE;
@@ -48,9 +49,9 @@ CREATE TABLE users (
   password VARCHAR(255) NOT NULL,
   phone_number VARCHAR(50),
   gender VARCHAR(20),
-  role VARCHAR(50) NOT NULL CHECK (role IN ('SYSTEM_ADMIN', 'RISK_OFFICER')),
+  role VARCHAR(50) NOT NULL CHECK (role IN ('SYSTEM_ADMIN', 'RISK_OFFICER', 'EMPLOYEE', 'employee')),
   department VARCHAR(100) DEFAULT 'Risk Management',
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'pending', 'rejected', 'inactive', 'suspended')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -272,6 +273,23 @@ CREATE TABLE audit_logs (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 17. Employee Submissions (Multi-tenant document submissions for Risk Officer review)
+CREATE TABLE employee_submissions (
+  id SERIAL PRIMARY KEY,
+  organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  employee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assessment_id INTEGER REFERENCES assessments(id) ON DELETE SET NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  document_name VARCHAR(255) NOT NULL,
+  document_path TEXT NOT NULL,
+  file_size INTEGER NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  status VARCHAR(50) DEFAULT 'SUBMITTED' CHECK (status IN ('SUBMITTED', 'ACCEPTED', 'REJECTED', 'PROCESSED')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_assessments_org ON assessments(organization_id);
@@ -281,6 +299,8 @@ CREATE INDEX idx_mitigation_actions_assessment ON mitigation_actions(assessment_
 CREATE INDEX idx_mitigation_actions_status ON mitigation_actions(status);
 CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_created ON audit_logs(created_at);
+CREATE INDEX idx_employee_submissions_org ON employee_submissions(organization_id);
+CREATE INDEX idx_employee_submissions_emp ON employee_submissions(employee_id);
 
 -- ============================================================================
 -- SEED DATA

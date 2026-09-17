@@ -5,10 +5,12 @@
 
 const {
   createAssessment,
+  deleteAssessment,
   attachDocument,
   runAssessmentPipeline,
   getAssessmentDetails,
   getAssessments,
+  evaluateAssessmentPrivacy,
 } = require("../services/assessmentService");
 
 const isUserAdmin = (user) =>
@@ -96,6 +98,29 @@ const uploadDocumentHandler = async (req, res) => {
   } catch (err) {
     console.error("uploadDocument error:", err);
     res.status(400).json({ message: err.message });
+  }
+};
+
+const deleteAssessmentHandler = async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id, 10);
+    const details = await getAssessmentDetails(assessmentId);
+
+    if (
+      !isUserAdmin(req.user) &&
+      details.assessment.organization_id !== req.user?.organization_id
+    ) {
+      return res.status(404).json({ message: "Assessment not found" });
+    }
+
+    const deleted = await deleteAssessment(assessmentId, req.user?.id);
+    res.json({
+      message: "Assessment deleted successfully",
+      assessment: deleted,
+    });
+  } catch (err) {
+    console.error("deleteAssessment error:", err);
+    res.status(404).json({ message: err.message });
   }
 };
 
@@ -202,11 +227,35 @@ const listAssessmentsHandler = async (req, res) => {
   }
 };
 
+const evaluateAssessmentPrivacyHandler = async (req, res) => {
+  try {
+    const assessmentId = parseInt(req.params.id, 10);
+    const details = await getAssessmentDetails(assessmentId);
+    if (
+      !isUserAdmin(req.user) &&
+      details.assessment.organization_id !== req.user?.organization_id
+    ) {
+      return res.status(403).json({
+        message:
+          "Forbidden: You do not have permission to evaluate this assessment.",
+      });
+    }
+
+    const result = await evaluateAssessmentPrivacy(assessmentId, req.user?.id);
+    res.json(result);
+  } catch (err) {
+    console.error("evaluateAssessmentPrivacy error:", err);
+    res.status(400).json({ message: err.message });
+  }
+};
+
 module.exports = {
   createAssessmentHandler,
+  deleteAssessmentHandler,
   uploadDocumentHandler,
   startAssessmentPipelineHandler,
   getAssessmentDetailsHandler,
   getAssessmentStatusHandler,
   listAssessmentsHandler,
+  evaluateAssessmentPrivacyHandler,
 };

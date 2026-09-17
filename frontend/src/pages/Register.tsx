@@ -29,6 +29,8 @@ import {
   ShieldCheck,
   Users,
   Clock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function Register() {
@@ -36,7 +38,9 @@ export default function Register() {
   const navigate = useNavigate();
 
   // Role Type: 'RISK_OFFICER' or 'EMPLOYEE'
-  const [accountType, setAccountType] = useState<"RISK_OFFICER" | "EMPLOYEE">("RISK_OFFICER");
+  const [accountType, setAccountType] = useState<"RISK_OFFICER" | "EMPLOYEE">(
+    "RISK_OFFICER",
+  );
 
   // Wizard Step for Risk Officer (1: Personal Account, 2: Business Profile)
   const [step, setStep] = useState<1 | 2>(1);
@@ -48,27 +52,35 @@ export default function Register() {
   const [gender, setGender] = useState("Male");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Employee-Specific Fields
   const [selectedOrgId, setSelectedOrgId] = useState<number | "">("");
   const [department, setDepartment] = useState("Operations");
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
-  const [employeeSuccessMessage, setEmployeeSuccessMessage] = useState<string | null>(null);
+  const [employeeSuccessMessage, setEmployeeSuccessMessage] = useState<
+    string | null
+  >(null);
 
   // Step 1 / User Validation Errors
   const [nameError, setNameError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<
+    string | null
+  >(null);
   const [orgSelectError, setOrgSelectError] = useState<string | null>(null);
   const [deptError, setDeptError] = useState<string | null>(null);
 
   // Step 2: Risk Officer Enterprise Profile Fields
   const [orgName, setOrgName] = useState("");
   const [industry, setIndustry] = useState("Financial & Enterprise Services");
-  const [businessType, setBusinessType] = useState("Microfinance & Digital Lending");
+  const [businessType, setBusinessType] = useState(
+    "Microfinance & Digital Lending",
+  );
   const [district, setDistrict] = useState("Nyarugenge");
   const [sector, setSector] = useState("Nyarugenge");
   const [streetNumber, setStreetNumber] = useState("");
@@ -79,10 +91,14 @@ export default function Register() {
   // Step 2 Errors
   const [orgNameError, setOrgNameError] = useState<string | null>(null);
   const [industryError, setIndustryError] = useState<string | null>(null);
-  const [businessTypeError, setBusinessTypeError] = useState<string | null>(null);
+  const [businessTypeError, setBusinessTypeError] = useState<string | null>(
+    null,
+  );
   const [districtError, setDistrictError] = useState<string | null>(null);
   const [sectorError, setSectorError] = useState<string | null>(null);
-  const [contactEmailError, setContactEmailError] = useState<string | null>(null);
+  const [contactEmailError, setContactEmailError] = useState<string | null>(
+    null,
+  );
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -191,7 +207,9 @@ export default function Register() {
   const handleDescriptionChange = (val: string) => {
     setDescription(val);
     if (val.trim() && val.trim().length < 10) {
-      setDescriptionError("Description must be at least 10 characters if provided.");
+      setDescriptionError(
+        "Description must be at least 10 characters if provided.",
+      );
     } else {
       setDescriptionError(null);
     }
@@ -220,7 +238,13 @@ export default function Register() {
     setPasswordError(passRes.error);
     setConfirmPasswordError(confirmErr);
 
-    if (!nameRes.isValid || !emailRes.isValid || !phoneRes.isValid || !passRes.isValid || confirmErr) {
+    if (
+      !nameRes.isValid ||
+      !emailRes.isValid ||
+      !phoneRes.isValid ||
+      !passRes.isValid ||
+      confirmErr
+    ) {
       return;
     }
 
@@ -259,7 +283,15 @@ export default function Register() {
     setOrgSelectError(orgErr);
     setDeptError(deptRes.error);
 
-    if (!nameRes.isValid || !emailRes.isValid || !phoneRes.isValid || !passRes.isValid || confirmErr || orgErr || !deptRes.isValid) {
+    if (
+      !nameRes.isValid ||
+      !emailRes.isValid ||
+      !phoneRes.isValid ||
+      !passRes.isValid ||
+      confirmErr ||
+      orgErr ||
+      !deptRes.isValid
+    ) {
       return;
     }
 
@@ -281,10 +313,12 @@ export default function Register() {
         res.message ||
           `Registration submitted successfully! Your account is attached to ${
             orgObj?.name || "your organization"
-          } and is pending approval by your Risk Officer.`
+          } and is pending approval by your Risk Officer.`,
       );
     } else {
-      setServerError(res.message || "Registration failed. Please check your information.");
+      setServerError(
+        res.message || "Registration failed. Please check your information.",
+      );
     }
   };
 
@@ -318,7 +352,15 @@ export default function Register() {
     setContactEmailError(contactEmailErr);
     setDescriptionError(descErr);
 
-    if (!orgRes.isValid || !indRes.isValid || !typeRes.isValid || !distRes.isValid || !secRes.isValid || contactEmailErr || descErr) {
+    if (
+      !orgRes.isValid ||
+      !indRes.isValid ||
+      !typeRes.isValid ||
+      !distRes.isValid ||
+      !secRes.isValid ||
+      contactEmailErr ||
+      descErr
+    ) {
       return;
     }
 
@@ -345,7 +387,11 @@ export default function Register() {
     if (res.success) {
       navigate("/dashboard");
     } else {
-      setServerError(res.message || authError || "Registration failed. Please check your data.");
+      setServerError(
+        res.message ||
+          authError ||
+          "Registration failed. Please check your data.",
+      );
     }
   };
 
@@ -360,7 +406,9 @@ export default function Register() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-xl font-black text-primary">Registration Submitted!</h2>
+              <h2 className="text-xl font-black text-primary">
+                Registration Submitted!
+              </h2>
               <span className="inline-block px-3 py-1 bg-amber-500/10 text-amber-600 border border-amber-500/30 rounded-full text-xs font-bold uppercase tracking-wider">
                 Status: Pending Approval
               </span>
@@ -373,10 +421,12 @@ export default function Register() {
             <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant text-left text-xs space-y-1.5">
               <p className="font-bold text-primary">Next Steps:</p>
               <p className="text-on-surface-variant text-[11px]">
-                1. Your organization's Risk Officer will review and accept your employee access request.
+                1. Your organization's Risk Officer will review and accept your
+                employee access request.
               </p>
               <p className="text-on-surface-variant text-[11px]">
-                2. Once approved, you can log in to submit operational and business documents for risk analysis.
+                2. Once approved, you can log in to submit operational and
+                business documents for risk analysis.
               </p>
             </div>
 
@@ -453,7 +503,9 @@ export default function Register() {
                   : "bg-surface-container text-on-surface-variant border-outline-variant"
               }`}
             >
-              <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">1</span>
+              <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                1
+              </span>
               <span>Personal Details</span>
             </div>
             <div className="w-6 h-0.5 bg-outline-variant" />
@@ -464,7 +516,9 @@ export default function Register() {
                   : "bg-surface-container text-on-surface-variant border-outline-variant"
               }`}
             >
-              <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">2</span>
+              <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                2
+              </span>
               <span>Enterprise Profile</span>
             </div>
           </div>
@@ -485,12 +539,17 @@ export default function Register() {
           {/* CASE 1: EMPLOYEE REGISTRATION FORM */}
           {/* ================================================================ */}
           {accountType === "EMPLOYEE" && (
-            <form onSubmit={handleEmployeeRegister} noValidate className="space-y-4 text-xs">
+            <form
+              onSubmit={handleEmployeeRegister}
+              noValidate
+              className="space-y-4 text-xs"
+            >
               <div className="p-3 bg-secondary-container/20 border border-secondary/30 rounded-xl text-primary flex items-start gap-2.5">
                 <Users className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
                 <p className="text-[11px] leading-relaxed">
-                  Join your company workspace to submit operational documents to your Risk Officer for risk assessment.
-                  Your registration requires approval from your Risk Officer.
+                  Join your company workspace to submit operational documents to
+                  your Risk Officer for risk assessment. Your registration
+                  requires approval from your Risk Officer.
                 </p>
               </div>
 
@@ -500,7 +559,11 @@ export default function Register() {
                   <label className="block font-bold text-primary uppercase tracking-wider">
                     Full Name <span className="text-secondary">*</span>
                   </label>
-                  {nameError && <span className="text-[10px] font-bold text-red-500">Invalid Name</span>}
+                  {nameError && (
+                    <span className="text-[10px] font-bold text-red-500">
+                      Invalid Name
+                    </span>
+                  )}
                 </div>
                 <input
                   type="text"
@@ -515,7 +578,9 @@ export default function Register() {
                   placeholder="e.g. Marie Claire Mukamana"
                 />
                 {nameError && (
-                  <p className="text-[11px] font-bold text-red-600 mt-1">{nameError}</p>
+                  <p className="text-[11px] font-bold text-red-600 mt-1">
+                    {nameError}
+                  </p>
                 )}
               </div>
 
@@ -525,7 +590,11 @@ export default function Register() {
                   <label className="block font-bold text-primary uppercase tracking-wider">
                     Corporate Email <span className="text-secondary">*</span>
                   </label>
-                  {emailError && <span className="text-[10px] font-bold text-red-500">Invalid Email</span>}
+                  {emailError && (
+                    <span className="text-[10px] font-bold text-red-500">
+                      Invalid Email
+                    </span>
+                  )}
                 </div>
                 <input
                   type="email"
@@ -540,7 +609,9 @@ export default function Register() {
                   placeholder="e.g. marie@company.rw"
                 />
                 {emailError && (
-                  <p className="text-[11px] font-bold text-red-600 mt-1">{emailError}</p>
+                  <p className="text-[11px] font-bold text-red-600 mt-1">
+                    {emailError}
+                  </p>
                 )}
               </div>
 
@@ -551,7 +622,11 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Phone Number
                     </label>
-                    {phoneError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {phoneError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
                   <input
                     type="tel"
@@ -565,7 +640,9 @@ export default function Register() {
                     placeholder="+250 788 123 456"
                   />
                   {phoneError && (
-                    <p className="text-[11px] font-bold text-red-600 mt-1">{phoneError}</p>
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {phoneError}
+                    </p>
                   )}
                 </div>
 
@@ -591,9 +668,14 @@ export default function Register() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block font-bold text-primary uppercase tracking-wider">
-                      Select Organization <span className="text-secondary">*</span>
+                      Select Organization{" "}
+                      <span className="text-secondary">*</span>
                     </label>
-                    {orgSelectError && <span className="text-[10px] font-bold text-red-500">Required</span>}
+                    {orgSelectError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Required
+                      </span>
+                    )}
                   </div>
                   <select
                     value={selectedOrgId}
@@ -616,7 +698,9 @@ export default function Register() {
                     )}
                   </select>
                   {orgSelectError && (
-                    <p className="text-[11px] font-bold text-red-600 mt-1">{orgSelectError}</p>
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {orgSelectError}
+                    </p>
                   )}
                 </div>
 
@@ -625,19 +709,29 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Department <span className="text-secondary">*</span>
                     </label>
-                    {deptError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {deptError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
                   <input
                     type="text"
                     value={department}
                     onChange={(e) => {
                       setDepartment(e.target.value);
-                      setDeptError(validateRequired(e.target.value, "Department", 2).error);
+                      setDeptError(
+                        validateRequired(e.target.value, "Department", 2).error,
+                      );
                     }}
                     className="w-full px-3.5 py-2.5 bg-surface-container-low border border-outline-variant rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="e.g. Loan Operations"
                   />
-                  {deptError && <p className="text-[11px] font-bold text-red-600 mt-1">{deptError}</p>}
+                  {deptError && (
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {deptError}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -648,21 +742,43 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Password <span className="text-secondary">*</span>
                     </label>
-                    {passwordError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {passwordError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => handlePasswordChange(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
-                      passwordError
-                        ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
-                        : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => handlePasswordChange(e.target.value)}
+                      className={`w-full px-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
+                        passwordError
+                          ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
+                          : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-primary hover:text-secondary cursor-pointer"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                   {passwordError && (
-                    <p className="text-[11px] font-bold text-red-600 mt-1">{passwordError}</p>
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {passwordError}
+                    </p>
                   )}
                 </div>
 
@@ -672,22 +788,48 @@ export default function Register() {
                       Confirm Password <span className="text-secondary">*</span>
                     </label>
                     {confirmPasswordError && (
-                      <span className="text-[10px] font-bold text-red-500">Mismatch</span>
+                      <span className="text-[10px] font-bold text-red-500">
+                        Mismatch
+                      </span>
                     )}
                   </div>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
-                      confirmPasswordError
-                        ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
-                        : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) =>
+                        handleConfirmPasswordChange(e.target.value)
+                      }
+                      className={`w-full px-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
+                        confirmPasswordError
+                          ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
+                          : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword((visible) => !visible)
+                      }
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-primary hover:text-secondary cursor-pointer"
+                      aria-label={
+                        showConfirmPassword
+                          ? "Hide confirmation password"
+                          : "Show confirmation password"
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                   {confirmPasswordError && (
-                    <p className="text-[11px] font-bold text-red-600 mt-1">{confirmPasswordError}</p>
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {confirmPasswordError}
+                    </p>
                   )}
                 </div>
               </div>
@@ -715,12 +857,17 @@ export default function Register() {
           {/* CASE 2: RISK OFFICER REGISTRATION (STEP 1: PERSONAL) */}
           {/* ================================================================ */}
           {accountType === "RISK_OFFICER" && step === 1 && (
-            <form onSubmit={handleProceedToStep2} noValidate className="space-y-4 text-xs">
+            <form
+              onSubmit={handleProceedToStep2}
+              noValidate
+              className="space-y-4 text-xs"
+            >
               <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl text-primary flex items-start gap-2.5">
                 <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-[11px] leading-relaxed">
-                  As a Risk Officer, you will register your enterprise organization and obtain full governance to
-                  calculate Risk Indices, manage mitigations, and approve employees.
+                  As a Risk Officer, you will register your enterprise
+                  organization and obtain full governance to calculate Risk
+                  Indices, manage mitigations, and approve employees.
                 </p>
               </div>
 
@@ -730,7 +877,11 @@ export default function Register() {
                   <label className="block font-bold text-primary uppercase tracking-wider">
                     Full Name <span className="text-secondary">*</span>
                   </label>
-                  {nameError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                  {nameError && (
+                    <span className="text-[10px] font-bold text-red-500">
+                      Invalid
+                    </span>
+                  )}
                 </div>
                 <input
                   type="text"
@@ -744,7 +895,11 @@ export default function Register() {
                   }`}
                   placeholder="e.g. Emmanuel Ndayisaba"
                 />
-                {nameError && <p className="text-[11px] font-bold text-red-600 mt-1">{nameError}</p>}
+                {nameError && (
+                  <p className="text-[11px] font-bold text-red-600 mt-1">
+                    {nameError}
+                  </p>
+                )}
               </div>
 
               {/* Corporate Email */}
@@ -753,7 +908,11 @@ export default function Register() {
                   <label className="block font-bold text-primary uppercase tracking-wider">
                     Corporate Email <span className="text-secondary">*</span>
                   </label>
-                  {emailError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                  {emailError && (
+                    <span className="text-[10px] font-bold text-red-500">
+                      Invalid
+                    </span>
+                  )}
                 </div>
                 <input
                   type="email"
@@ -767,7 +926,11 @@ export default function Register() {
                   }`}
                   placeholder="e.g. emmanuel@enterprise.rw"
                 />
-                {emailError && <p className="text-[11px] font-bold text-red-600 mt-1">{emailError}</p>}
+                {emailError && (
+                  <p className="text-[11px] font-bold text-red-600 mt-1">
+                    {emailError}
+                  </p>
+                )}
               </div>
 
               {/* Phone & Gender */}
@@ -777,7 +940,11 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Phone Number
                     </label>
-                    {phoneError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {phoneError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
                   <input
                     type="tel"
@@ -790,7 +957,11 @@ export default function Register() {
                     }`}
                     placeholder="+250 788 123 456"
                   />
-                  {phoneError && <p className="text-[11px] font-bold text-red-600 mt-1">{phoneError}</p>}
+                  {phoneError && (
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {phoneError}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -817,20 +988,44 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Password <span className="text-secondary">*</span>
                     </label>
-                    {passwordError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {passwordError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => handlePasswordChange(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
-                      passwordError
-                        ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
-                        : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
-                    }`}
-                  />
-                  {passwordError && <p className="text-[11px] font-bold text-red-600 mt-1">{passwordError}</p>}
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => handlePasswordChange(e.target.value)}
+                      className={`w-full px-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
+                        passwordError
+                          ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
+                          : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-primary hover:text-secondary cursor-pointer"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  {passwordError && (
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {passwordError}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -839,22 +1034,48 @@ export default function Register() {
                       Confirm Password <span className="text-secondary">*</span>
                     </label>
                     {confirmPasswordError && (
-                      <span className="text-[10px] font-bold text-red-500">Mismatch</span>
+                      <span className="text-[10px] font-bold text-red-500">
+                        Mismatch
+                      </span>
                     )}
                   </div>
-                  <input
-                    type="password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => handleConfirmPasswordChange(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
-                      confirmPasswordError
-                        ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
-                        : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
-                    }`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) =>
+                        handleConfirmPasswordChange(e.target.value)
+                      }
+                      className={`w-full px-3.5 pr-11 py-2.5 rounded-xl text-xs font-semibold focus:outline-none transition-all ${
+                        confirmPasswordError
+                          ? "border-2 border-red-500 bg-red-500/10 text-red-700 placeholder:text-red-300 focus:ring-2 focus:ring-red-400"
+                          : "bg-surface-container-low border border-outline-variant text-primary focus:ring-2 focus:ring-primary"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword((visible) => !visible)
+                      }
+                      className="absolute inset-y-0 right-0 px-3 flex items-center text-primary hover:text-secondary cursor-pointer"
+                      aria-label={
+                        showConfirmPassword
+                          ? "Hide confirmation password"
+                          : "Show confirmation password"
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                   {confirmPasswordError && (
-                    <p className="text-[11px] font-bold text-red-600 mt-1">{confirmPasswordError}</p>
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {confirmPasswordError}
+                    </p>
                   )}
                 </div>
               </div>
@@ -875,7 +1096,11 @@ export default function Register() {
           {/* CASE 2: RISK OFFICER REGISTRATION (STEP 2: BUSINESS INFO) */}
           {/* ================================================================ */}
           {accountType === "RISK_OFFICER" && step === 2 && (
-            <form onSubmit={handleOfficerRegister} noValidate className="space-y-4 text-xs">
+            <form
+              onSubmit={handleOfficerRegister}
+              noValidate
+              className="space-y-4 text-xs"
+            >
               <div className="flex items-center justify-between pb-2 border-b border-outline-variant">
                 <span className="font-extrabold text-primary text-xs uppercase tracking-wide">
                   Step 2: Organization Profile
@@ -894,9 +1119,14 @@ export default function Register() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block font-bold text-primary uppercase tracking-wider">
-                    Enterprise Legal Name <span className="text-secondary">*</span>
+                    Enterprise Legal Name{" "}
+                    <span className="text-secondary">*</span>
                   </label>
-                  {orgNameError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                  {orgNameError && (
+                    <span className="text-[10px] font-bold text-red-500">
+                      Invalid
+                    </span>
+                  )}
                 </div>
                 <input
                   type="text"
@@ -910,7 +1140,11 @@ export default function Register() {
                   }`}
                   placeholder="e.g. Rwanda Kabuhariwe Microfinance Ltd"
                 />
-                {orgNameError && <p className="text-[11px] font-bold text-red-600 mt-1">{orgNameError}</p>}
+                {orgNameError && (
+                  <p className="text-[11px] font-bold text-red-600 mt-1">
+                    {orgNameError}
+                  </p>
+                )}
               </div>
 
               {/* Industry & Business Type */}
@@ -920,7 +1154,11 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Industry Sector <span className="text-secondary">*</span>
                     </label>
-                    {industryError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {industryError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
                   <input
                     type="text"
@@ -930,7 +1168,11 @@ export default function Register() {
                     className="w-full px-3.5 py-2.5 bg-surface-container-low border border-outline-variant rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="e.g. Financial Services"
                   />
-                  {industryError && <p className="text-[11px] font-bold text-red-600 mt-1">{industryError}</p>}
+                  {industryError && (
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {industryError}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -938,7 +1180,11 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Business Type <span className="text-secondary">*</span>
                     </label>
-                    {businessTypeError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {businessTypeError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
                   <input
                     type="text"
@@ -949,7 +1195,9 @@ export default function Register() {
                     placeholder="e.g. Digital Micro-Lending"
                   />
                   {businessTypeError && (
-                    <p className="text-[11px] font-bold text-red-600 mt-1">{businessTypeError}</p>
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {businessTypeError}
+                    </p>
                   )}
                 </div>
               </div>
@@ -961,7 +1209,11 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       District <span className="text-secondary">*</span>
                     </label>
-                    {districtError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {districtError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
                   <input
                     type="text"
@@ -970,7 +1222,11 @@ export default function Register() {
                     onChange={(e) => handleDistrictChange(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-surface-container-low border border-outline-variant rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  {districtError && <p className="text-[11px] font-bold text-red-600 mt-1">{districtError}</p>}
+                  {districtError && (
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {districtError}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -978,7 +1234,11 @@ export default function Register() {
                     <label className="block font-bold text-primary uppercase tracking-wider">
                       Sector <span className="text-secondary">*</span>
                     </label>
-                    {sectorError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                    {sectorError && (
+                      <span className="text-[10px] font-bold text-red-500">
+                        Invalid
+                      </span>
+                    )}
                   </div>
                   <input
                     type="text"
@@ -987,7 +1247,11 @@ export default function Register() {
                     onChange={(e) => handleSectorChange(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-surface-container-low border border-outline-variant rounded-xl text-xs font-semibold text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  {sectorError && <p className="text-[11px] font-bold text-red-600 mt-1">{sectorError}</p>}
+                  {sectorError && (
+                    <p className="text-[11px] font-bold text-red-600 mt-1">
+                      {sectorError}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1023,7 +1287,11 @@ export default function Register() {
                   <label className="block font-bold text-primary uppercase tracking-wider">
                     Operational Scope & Description
                   </label>
-                  {descriptionError && <span className="text-[10px] font-bold text-red-500">Invalid</span>}
+                  {descriptionError && (
+                    <span className="text-[10px] font-bold text-red-500">
+                      Invalid
+                    </span>
+                  )}
                 </div>
                 <textarea
                   rows={2}
@@ -1033,7 +1301,9 @@ export default function Register() {
                   placeholder="Brief summary of business operations..."
                 />
                 {descriptionError && (
-                  <p className="text-[11px] font-bold text-red-600 mt-1">{descriptionError}</p>
+                  <p className="text-[11px] font-bold text-red-600 mt-1">
+                    {descriptionError}
+                  </p>
                 )}
               </div>
 
@@ -1067,7 +1337,10 @@ export default function Register() {
           <div className="mt-6 pt-4 border-t border-outline-variant text-center">
             <p className="text-xs text-on-surface-variant font-medium">
               Already have an account?{" "}
-              <Link to="/login" className="font-bold text-primary hover:underline">
+              <Link
+                to="/login"
+                className="font-bold text-primary hover:underline"
+              >
                 Sign in to ERIDSS
               </Link>
             </p>
